@@ -1,0 +1,20 @@
+# alias, dependencies
+use kamichidu/vim-unite-javaimport
+    as unite-javaimport
+    depends (
+        Shougo/unite.vim
+        vim-javaclasspath
+    )
+
+# no alias, no dependencies
+use kamichidu/vim-javaclasspath
+
+# no alias, dependencies
+use kamichidu/vim-javaclasspath
+    depends (
+        kamichidu/vim-javaclasspath
+    )
+
+# alias, no dependencies
+use kamichidu/vim-milqi
+    as milqi
