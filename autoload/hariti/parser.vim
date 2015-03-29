@@ -49,7 +49,7 @@ function! s:match(in, pat) abort
     call s:skip(a:in)
     let end= matchend(a:in.text, '^' . a:pat, a:in.pos)
     if end == -1
-        let [lnum, col]= s:where_is(in)
+        let [lnum, col]= s:where_is(a:in)
         throw printf('hariti: Expects %s. (line %d, column %d)', a:pat, lnum, col)
     endif
 
@@ -63,7 +63,7 @@ function! s:expect(in, pat) abort
     call s:skip(a:in)
     let end= matchend(a:in.text, '^' . a:pat, a:in.pos)
     if end == -1
-        let [lnum, col]= s:where_is(in)
+        let [lnum, col]= s:where_is(a:in)
         throw printf('hariti: Expects %s. (line %d, column %d)', a:pat, lnum, col)
     endif
 
@@ -121,7 +121,12 @@ function! s:bundle(in) abort
     let context.repository= s:repository(a:in)
     if s:lookahead(a:in, 'as')
         call s:expect(a:in, 'as')
-        let context.alias= s:alias(a:in)
+        let context.alias= []
+        let context.alias+= [s:alias(a:in)]
+        while s:lookahead(a:in, ',')
+            call s:expect(a:in, ',')
+            let context.alias+= [s:alias(a:in)]
+        endwhile
     endif
     if s:lookahead(a:in, 'depends')
         call s:expect(a:in, 'depends')

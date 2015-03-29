@@ -4,7 +4,7 @@ file
 
 bundle
     : 'use' repository
-      ('as' alias)?
+      ('as' alias (',' alias)*)?
       ('depends' '('
         dependency*
       ')')?

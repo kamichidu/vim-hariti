@@ -1,6 +1,6 @@
 # alias, dependencies
 use kamichidu/vim-unite-javaimport
-    as unite-javaimport
+    as unite-javaimport, javaimport
     depends (
         Shougo/unite.vim
         vim-javaclasspath

@@ -9,7 +9,7 @@ function! s:suite.parse()
     \   'bundle': [
     \       {
     \           'repository': {'Identifier': ['kamichidu', 'vim-unite-javaimport']},
-    \           'alias': {'Identifier': 'unite-javaimport'},
+    \           'alias': [{'Identifier': 'unite-javaimport'}, {'Identifier': 'javaimport'}],
     \           'dependency': [
     \               {
     \                   'repository': {'Identifier': ['Shougo', 'unite.vim'],},
@@ -32,7 +32,7 @@ function! s:suite.parse()
     \       },
     \       {
     \           'repository': {'Identifier': ['kamichidu', 'vim-milqi']},
-    \           'alias': {'Identifier': 'milqi'},
+    \           'alias': [{'Identifier': 'milqi'}],
     \       },
     \   ],
     \})
