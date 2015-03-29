@@ -81,31 +81,6 @@ function! s:skip(in) abort
     endwhile
 endfunction
 
-"
-" file
-"   : bundle*
-"   ;
-"
-" bundle
-"   : 'use' repository
-"     ('as' alias)?
-"     ('depends' '('
-"       dependency*
-"     ')')?
-"   ;
-"
-" repository
-"   : Identifier ('/' Identifier)?
-"   ;
-"
-" dependency
-"   : repository
-"   ;
-"
-" alias
-"   : Identifier
-"   ;
-"
 function! s:file(in) abort
     let context= {}
     let context.bundle= []
