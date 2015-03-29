@@ -31,16 +31,26 @@ function! hariti#parser#parse() dict abort
 
     let context= s:file(in)
     if in.pos < in.length
-        throw "hariti: Couldn't consume whole file."
+        let [lnum, col]= s:where_is(in)
+        throw printf("hariti: Couldn't consume whole file. (line %d, column %d)", lnum, col)
     endif
     return context
+endfunction
+
+function! s:where_is(in) abort
+    let lines= split(a:in.text[ : a:in.pos], '\%(\r\n\|\r\|\n\)')
+    let lnum= len(lines)
+    let col= strlen(lines[-1])
+
+    return [lnum, col]
 endfunction
 
 function! s:match(in, pat) abort
     call s:skip(a:in)
     let end= matchend(a:in.text, '^' . a:pat, a:in.pos)
     if end == -1
-        throw printf('hariti: Expects %s, but got %s.', a:pat, strpart(a:in.text, a:in.pos, 3))
+        let [lnum, col]= s:where_is(in)
+        throw printf('hariti: Expects %s. (line %d, column %d)', a:pat, lnum, col)
     endif
 
     let start= a:in.pos
@@ -53,7 +63,8 @@ function! s:expect(in, pat) abort
     call s:skip(a:in)
     let end= matchend(a:in.text, '^' . a:pat, a:in.pos)
     if end == -1
-        throw printf('hariti: Expects %s, but got %s.', a:pat, strpart(a:in.text, a:in.pos, 3))
+        let [lnum, col]= s:where_is(in)
+        throw printf('hariti: Expects %s. (line %d, column %d)', a:pat, lnum, col)
     endif
 
     let a:in.pos= end
