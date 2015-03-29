@@ -1,0 +1,27 @@
+file
+    : bundle*
+    ;
+
+bundle
+    : 'use' repository
+      ('as' alias)?
+      ('depends' '('
+        dependency*
+      ')')?
+    ;
+
+repository
+    : Identifier ('/' Identifier)?
+    ;
+
+dependency
+    : repository
+    ;
+
+alias
+    : Identifier
+    ;
+
+Identifier
+    : [a-zA-Z0-9.$_-]+
+    ;
