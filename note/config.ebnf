@@ -5,6 +5,7 @@ file
 bundle
     : 'use' repository
       ('as' alias (',' alias)*)?
+      ('enable_if' String)?
       ('depends' '('
         dependency*
       ')')?
@@ -24,4 +25,9 @@ alias
 
 Identifier
     : [a-zA-Z0-9.$_-]+
+    ;
+
+String
+    : '(?:[^\']|\'\')'
+    | "(?:[^\"]|\\\")"
     ;

@@ -103,6 +103,10 @@ function! s:bundle(in) abort
             let context.alias+= [s:alias(a:in)]
         endwhile
     endif
+    if s:lookahead(a:in, 'enable_if')
+        call s:expect(a:in, 'enable_if')
+        let context.enable_if= {'String': s:String(a:in)}
+    endif
     if s:lookahead(a:in, 'depends')
         call s:expect(a:in, 'depends')
         call s:expect(a:in, '(')
@@ -141,6 +145,10 @@ endfunction
 
 function! s:Identifier(in) abort
     return s:match(a:in, '[a-zA-Z0-9.$_-]\+')
+endfunction
+
+function! s:String(in) abort
+    return s:match(a:in, '\%(''\%([^'']\|\\''\)*''\|"\%([^"]\|\\"\)*"\)')
 endfunction
 
 function! hariti#parser#new(input, ...) abort
