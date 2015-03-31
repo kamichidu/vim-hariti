@@ -23,7 +23,6 @@ let s:save_cpo= &cpo
 set cpo&vim
 
 let s:plugin_base= expand('<sfile>:p:h:h:h')
-echomsg 'plugin base:' s:plugin_base
 
 function! hariti#builder#build(config)
     try
