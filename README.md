@@ -14,13 +14,18 @@ hariti has some concepts:
 
 Installation
 ------------------------------------------------------------------------------------------------------------------------
-1. Make a directory and clone this.
+1. Make a directory and clone this
 
     ```sh
     $ mkdir -p ~/.hariti/bundle/
     $ cd ~/.hariti/bundle/
     $ git clone https://github.com/kamichidu/vim-hariti
     ```
+
+1. Edit your [bundles file](#bundles-file-grammar)
+
+    bundles file is placed at `~/.hariti/bundles` or `g:hariti_config.source_filename`.
+    See [example](#example).
 
 1. Edit your `$MYVIMRC`
 
@@ -34,6 +39,7 @@ Installation
     " Apply plug-ins to your &runtimepath
     HaritiSetup
     ```
+
 
 Usage
 ------------------------------------------------------------------------------------------------------------------------
@@ -59,7 +65,32 @@ Usage
     Otherwise, 0.
 
 
-Example
+Bundles file grammar
+------------------------------------------------------------------------------------------------------------------------
+Complete grammar description [here](note/config.ebnf).
+
+* Simple usage
+
+    `use {github username}/{github repository}` or `use {plug-in name}`.
+
+* Make plug-in's alias
+
+    `as {alias}`
+
+    {alias} can be used for `hariti#tap()` and in depends section.
+
+* Conditional enabling/disabling plug-in
+
+    `enable_if "{vim expr}"` or `enable_if '{vim expr}'`
+
+    {vim expr} is simply placed in if condition.
+
+* Use other plug-ins are required by
+
+    `depends ({dependant plug-in})`
+
+
+Example <a name="example">
 ------------------------------------------------------------------------------------------------------------------------
 bundles file:
 
