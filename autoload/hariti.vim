@@ -26,6 +26,22 @@ let s:modtime= 0
 let s:names= []
 
 function! hariti#tap(name) abort
+    return s:enabled(a:name)
+endfunction
+
+function! hariti#has(name) abort
+    return s:enabled(a:name)
+endfunction
+
+function! hariti#exist(name) abort
+    return s:enabled(a:name)
+endfunction
+
+function! hariti#enabled(name) abort
+    return s:enabled(a:name)
+endfunction
+
+function! s:enabled(name) abort
     if !filereadable(g:hariti_config.tap_filename)
         return 0
     elseif s:modtime < getftime(g:hariti_config.tap_filename)
