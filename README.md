@@ -63,27 +63,27 @@ Example
 ------------------------------------------------------------------------------------------------------------------------
 bundles file:
 
-    ```txt
-    use kamichidu/vim-hariti
-        as hariti
+```txt
+use kamichidu/vim-hariti
+    as hariti
 
-    use kamichidu/vim-unite-javaimport
-        as unite-javaimport
-        depends (
-            Shougo/unite.vim
-            kamichidu/vim-javaclasspath
-        )
+use kamichidu/vim-unite-javaimport
+    as unite-javaimport
+    depends (
+        Shougo/unite.vim
+        kamichidu/vim-javaclasspath
+    )
 
-    use Shougo/neocomplete.vim
-        as neco, neocomplete
-        enable_if "has('lua')"
+use Shougo/neocomplete.vim
+    as neco, neocomplete
+    enable_if "has('lua')"
 
-    use Shougo/neocomplcache.vim
-        as neco, neocomplcache
-        enable_if "!has('lua')"
+use Shougo/neocomplcache.vim
+    as neco, neocomplcache
+    enable_if "!has('lua')"
 
-    use eagletmt/neco-ghc
-        depends (
-            neco
-        )
-    ```
+use eagletmt/neco-ghc
+    depends (
+        neco
+    )
+```
