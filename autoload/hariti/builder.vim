@@ -196,6 +196,7 @@ function! s:build_internal(config, context)
         endif
         let bundles+= [info]
     endfor
+    let bundles= hariti#builder#uniq_bundle(bundles)
 
     return [bundles, aliases]
 endfunction
@@ -219,6 +220,23 @@ endfunction
 
 function! s:unify_separator(path) abort
     return substitute(a:path, '[\\/]\+', '/', 'g')
+endfunction
+
+function! hariti#builder#uniq_bundle(bundles)
+    let bundles= []
+    for x in a:bundles
+        let already_has= 0
+        for y in bundles
+            if x ==# y
+                let already_has= 1
+            endif
+        endfor
+
+        if !already_has
+            let bundles+= [x]
+        endif
+    endfor
+    return bundles
 endfunction
 
 let &cpo= s:save_cpo
