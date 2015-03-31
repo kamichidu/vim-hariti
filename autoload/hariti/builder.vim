@@ -214,7 +214,11 @@ endfunction
 function! s:make_path(config, repository)
     let tail= a:repository.Identifier[-1]
 
-    return join([a:config.bundle_directory, tail], '/')
+    return s:unify_separator(join([a:config.bundle_directory, tail], '/'))
+endfunction
+
+function! s:unify_separator(path) abort
+    return substitute(a:path, '[\\/]\+', '/', 'g')
 endfunction
 
 let &cpo= s:save_cpo
