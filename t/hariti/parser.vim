@@ -34,6 +34,30 @@ function! s:suite.parse()
     \           'repository': {'Identifier': ['kamichidu', 'vim-milqi']},
     \           'alias': [{'Identifier': 'milqi'}],
     \       },
+    \       {
+    \           'filepath': {'Path': '~/hoge/fuga/'},
+    \       },
+    \       {
+    \           'filepath': {'Path': '~/hoge/fuga'},
+    \           'includes': [
+    \               {'GlobExpr': '**/*/piyo/'},
+    \           ],
+    \       },
+    \       {
+    \           'filepath': {'Path': '~/hoge/fuga'},
+    \           'excludes': [
+    \               {'GlobExpr': '**/*/piyo/'},
+    \           ],
+    \       },
+    \       {
+    \           'filepath': {'Path': '~/hoge/fuga'},
+    \           'includes': [
+    \               {'GlobExpr': '**/*/piyo/'},
+    \           ],
+    \           'excludes': [
+    \               {'GlobExpr': '**/*/piyo/'},
+    \           ],
+    \       },
     \   ],
     \})
 endfunction

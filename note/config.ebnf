@@ -9,6 +9,9 @@ bundle
       ('depends' '('
         dependency*
       ')')?
+    | 'use' 'local' filepath
+      ('includes' '(' globexpr* ')')?
+      ('excludes' '(' globexpr* ')')?
     ;
 
 repository
@@ -23,6 +26,14 @@ alias
     : Identifier
     ;
 
+filepath
+    : Path
+    ;
+
+globexpr
+    : GlobExpr
+    ;
+
 Identifier
     : [a-zA-Z0-9.$_-]+
     ;
@@ -30,4 +41,12 @@ Identifier
 String
     : '(?:[^\']|\'\')'
     | "(?:[^\"]|\\\")"
+    ;
+
+GlobExpr
+    : (?:\*{1,2}|\f)+
+    ;
+
+Path
+    : \f+
     ;

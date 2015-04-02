@@ -18,3 +18,23 @@ use kamichidu/vim-javaclasspath
 # alias, no dependencies
 use kamichidu/vim-milqi
     as milqi
+
+use local ~/hoge/fuga/
+
+use local ~/hoge/fuga
+    includes (
+        **/*/piyo/
+    )
+
+use local ~/hoge/fuga
+    excludes (
+        **/*/piyo/
+    )
+
+use local ~/hoge/fuga
+    includes (
+        **/*/piyo/
+    )
+    excludes (
+        **/*/piyo/
+    )
