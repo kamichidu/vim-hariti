@@ -1,5 +1,12 @@
 language: shell
 
+sudo: required
+
+install:
+  - sudo add-apt-repository ppa:pi-rho/dev -y
+  - sudo apt-get update -q
+  - sudo apt-get install vim-nox
+
 before_script: vim --version
 
 script: sh ./themis.sh
