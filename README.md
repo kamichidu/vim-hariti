@@ -1,4 +1,4 @@
-hariti
+hariti [![Build Status](https://travis-ci.org/kamichidu/vim-hariti.svg)](https://travis-ci.org/kamichidu/vim-hariti)
 ========================================================================================================================
 This is a minimal plug-in manager for vim.
 hariti is inspired by [neobundle.vim](https://github.com/Shougo/neobundle.vim), and this has lesser features.
