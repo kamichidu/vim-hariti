@@ -1,0 +1,5 @@
+language: shell
+
+before_script: vim --version
+
+script: sh ./themis.sh
