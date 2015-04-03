@@ -23,6 +23,7 @@ let s:save_cpo= &cpo
 set cpo&vim
 
 let s:plugin_base= expand('<sfile>:p:h:h:h')
+let s:util= hariti#util#get()
 
 function! hariti#builder#build(config)
     try
@@ -132,73 +133,113 @@ function! s:parse(config)
 endfunction
 
 function! s:build_internal(config, context)
-    let aliases= {}
-    for bundle in a:context.bundle
-        let info= {
-        \   'url': s:make_url(bundle.repository),
-        \   'path': s:make_path(a:config, bundle.repository),
-        \}
-        if has_key(bundle, 'enable_if')
-            let info.enable_if= bundle.enable_if.String[1 : -2]
-        endif
-
-        if !has_key(aliases, join(bundle.repository.Identifier, '/'))
-            let aliases[join(bundle.repository.Identifier, '/')]= []
-        endif
-        let aliases[join(bundle.repository.Identifier, '/')]+= [info]
-        if has_key(bundle, 'alias')
-            for alias in bundle.alias
-                if !has_key(aliases, alias.Identifier)
-                    let aliases[alias.Identifier]= []
-                endif
-                let aliases[alias.Identifier]+= [info]
-            endfor
-        else
-            let url= s:make_url(bundle.repository)
-            if !has_key(aliases, url)
-                let aliases[url]= []
-            endif
-            let aliases[url]+= [info]
-        endif
-    endfor
-    unlet! info
-
+    let aliases= s:make_aliases(a:config, a:context)
     let bundles= []
     for bundle in a:context.bundle
-        if has_key(bundle, 'dependency')
-            unlet! info
-            for dependency in bundle.dependency
-                if has_key(aliases, join(dependency.repository.Identifier, '/'))
-                    let info= aliases[join(dependency.repository.Identifier, '/')]
-                else
-                    let info= [{
-                    \   'url': s:make_url(dependency.repository),
-                    \   'path': s:make_path(a:config, dependency.repository),
-                    \}]
-                    if has_key(bundle, 'enable_if')
-                        for i in info
-                            let i.enable_if= bundle.enable_if
-                        endfor
-                        unlet! i
-                    endif
-                endif
-                let bundles+= info
-            endfor
+        if s:is_bundle(bundle)
+            let bundles+= s:make_bundles(a:config, aliases, bundle)
+        else
+            let bundles+= s:make_local_bundles(a:config, aliases, bundle)
         endif
+    endfor
+    let bundles= s:util.uniq(bundles)
 
-        unlet! info
-        let info= {
+    return [bundles, aliases]
+endfunction
+
+function! s:is_bundle(bundle) abort
+    return has_key(a:bundle, 'repository')
+endfunction
+
+function! s:is_local_bundle(bundle) abort
+    return has_key(a:bundle, 'filepath')
+endfunction
+
+function! s:make_bundles(config, aliases, bundle) abort
+    let bundles= []
+    if has_key(a:bundle, 'dependency')
+        for dependency in a:bundle.dependency
+            if has_key(a:aliases, join(dependency.repository.Identifier, '/'))
+                let info= a:aliases[join(dependency.repository.Identifier, '/')]
+            else
+                let info= [{
+                \   'url': s:make_url(dependency.repository),
+                \   'path': s:make_path(a:config, dependency.repository),
+                \}]
+                if has_key(a:bundle, 'enable_if')
+                    for i in info
+                        let i.enable_if= a:bundle.enable_if
+                    endfor
+                    unlet! i
+                endif
+            endif
+            let bundles+= info
+        endfor
+    endif
+
+    unlet! info
+    let info= {
+    \   'url': s:make_url(a:bundle.repository),
+    \   'path': s:make_path(a:config, a:bundle.repository),
+    \}
+    if has_key(a:bundle, 'enable_if')
+        let info.enable_if= a:bundle.enable_if.String[1 : -2]
+    endif
+    return bundles
+endfunction
+
+function! s:make_local_bundles(config, aliases, bundle) abort
+    let path= expand(a:bundle.filepath.Path)
+    if !isdirectory(path)
+        return []
+    endif
+
+    let dirs= split(globpath(path, '*'), "\n")
+    call filter(dirs, 'isdirectory(v:val)')
+    call map(dirs, 's:util.unify_separator(v:val . "/")')
+    if has_key(a:bundle, 'includes')
+        for expr in a:bundle.includes
+            let pat= '^' . substitute(expr.GlobExpr, '\*', '.*', 'g') . '$'
+            call filter(dirs, 'fnamemodify(v:val, ":t") =~# pat')
+        endfor
+    endif
+    if has_key(a:bundle, 'excludes')
+        for expr in a:bundle.excludes
+            let pat= '^' . substitute(expr.GlobExpr, '\*', '.*', 'g') . '$'
+            call filter(dirs, 'fnamemodify(v:val, ":t") !~# pat')
+        endfor
+    endif
+
+    return map(dirs, "{'path': v:val}")
+endfunction
+
+function! s:make_aliases(config, context) abort
+    let bundles= filter(copy(a:context.bundle), 's:is_bundle(v:val)')
+    let aliases= {}
+    " url, name, alias => data
+    for bundle in bundles
+        let data= {
         \   'url': s:make_url(bundle.repository),
         \   'path': s:make_path(a:config, bundle.repository),
         \}
         if has_key(bundle, 'enable_if')
-            let info.enable_if= bundle.enable_if.String[1 : -2]
+            let data.enable_if= bundle.enable_if.String[1 : -2]
         endif
-        let bundles+= [info]
-    endfor
-    let bundles= hariti#builder#uniq_bundle(bundles)
 
-    return [bundles, aliases]
+        " url => data
+        let url= s:make_url(bundle.repository)
+        let aliases[url]= get(aliases, url, []) + [data]
+        " name => data
+        let name= bundle.repository.Identifier[-1]
+        let aliases[name]= get(aliases, name, []) + [data]
+        " alias => data
+        if has_key(bundle, 'alias')
+            for alias in bundle.alias
+                let aliases[alias.Identifier]= get(aliases, alias.Identifier, []) + [data]
+            endfor
+        endif
+    endfor
+    return aliases
 endfunction
 
 function! s:make_url(repository)
@@ -215,28 +256,7 @@ endfunction
 function! s:make_path(config, repository)
     let tail= a:repository.Identifier[-1]
 
-    return s:unify_separator(join([a:config.bundle_directory, tail], '/'))
-endfunction
-
-function! s:unify_separator(path) abort
-    return substitute(a:path, '[\\/]\+', '/', 'g')
-endfunction
-
-function! hariti#builder#uniq_bundle(bundles)
-    let bundles= []
-    for x in a:bundles
-        let already_has= 0
-        for y in bundles
-            if x ==# y
-                let already_has= 1
-            endif
-        endfor
-
-        if !already_has
-            let bundles+= [x]
-        endif
-    endfor
-    return bundles
+    return s:util.unify_separator(join([a:config.bundle_directory, tail], '/'))
 endfunction
 
 let &cpo= s:save_cpo
