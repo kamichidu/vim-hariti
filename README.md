@@ -117,4 +117,11 @@ use eagletmt/neco-ghc
     depends (
         neco
     )
+
+use local ~/sources/vim-plugin/
+    # includes (
+    # )
+    excludes (
+        _*
+    )
 ```
