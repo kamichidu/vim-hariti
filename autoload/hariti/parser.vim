@@ -97,13 +97,13 @@ function! s:bundle(in) abort
         call s:expect(a:in, 'local')
         let context.filepath= s:filepath(a:in)
         let context.options= []
-        while s:lookahead(a:in, '\%(includes\|excludes\)')
+        while s:lookahead(a:in, '[ie]')
             let context.options+= [s:local_bundle_option(a:in)]
         endwhile
     else
         let context.repository= s:repository(a:in)
         let context.options= []
-        while s:lookahead(a:in, '\%(as\|enable_if\|depends\)')
+        while s:lookahead(a:in, '[aed]')
             let context.options+= [s:bundle_option(a:in)]
         endwhile
     endif
@@ -132,7 +132,8 @@ function! s:bundle_option(in) abort
         endwhile
         call s:expect(a:in, ')')
     else
-        throw printf("")
+        let [lnum, col]= s:where_is(a:in)
+        throw printf('hariti: Expects \%(as\|enable_if\|depends\). (line %d, column %d)', lnum, col)
     endif
     return context
 endfunction
@@ -156,7 +157,8 @@ function! s:local_bundle_option(in) abort
         endwhile
         call s:expect(a:in, ')')
     else
-        throw printf("")
+        let [lnum, col]= s:where_is(a:in)
+        throw printf('hariti: Expects \%(includes\|excludes\). (line %d, column %d)', lnum, col)
     endif
     return context
 endfunction
