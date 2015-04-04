@@ -50,7 +50,21 @@ function! hariti#builder#write_tapfile(config, aliases)
         call mkdir(fnamemodify(a:config.tap_filename, ':h'), 'p')
     endif
 
-    call writefile(keys(a:aliases), a:config.tap_filename)
+    let script= []
+    for key in keys(a:aliases)
+        let expr= []
+        for data in a:aliases[key]
+            let condition= []
+            if has_key(data, 'enable_if')
+                let condition+= [data.enable_if]
+            endif
+            let condition+= [printf('isdirectory(%s)', string(data.path))]
+            let expr+= ['(' . join(condition, ' && ') . ')']
+        endfor
+        let script+= [key . "\t" . join(expr, ' || ')]
+    endfor
+
+    call writefile(script, a:config.tap_filename)
 endfunction
 
 function! hariti#builder#download(config, rtp)

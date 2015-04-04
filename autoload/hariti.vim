@@ -23,7 +23,7 @@ let s:save_cpo= &cpo
 set cpo&vim
 
 let s:modtime= 0
-let s:names= []
+let s:tap= {}
 
 function! hariti#tap(name) abort
     return s:enabled(a:name)
@@ -45,10 +45,14 @@ function! s:enabled(name) abort
     if !filereadable(g:hariti_config.tap_filename)
         return 0
     elseif s:modtime < getftime(g:hariti_config.tap_filename)
-        let s:names= readfile(g:hariti_config.tap_filename)
+        let s:tap= {}
+        for record in readfile(g:hariti_config.tap_filename)
+            let [key, expr]= [matchstr(record, '^[^\t]\+'), matchstr(record, '\t\zs.*$')]
+            let s:tap[key]= eval(expr)
+        endfor
     endif
 
-    return index(s:names, a:name) != -1
+    return get(s:tap, a:name, 0)
 endfunction
 
 let &cpo= s:save_cpo
