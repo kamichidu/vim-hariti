@@ -96,48 +96,67 @@ function! s:bundle(in) abort
     if s:lookahead(a:in, 'local')
         call s:expect(a:in, 'local')
         let context.filepath= s:filepath(a:in)
-        if s:lookahead(a:in, 'includes')
-            call s:expect(a:in, 'includes')
-            call s:expect(a:in, '(')
-            let context.includes= []
-            while s:lookahead(a:in, '\%(\*\{1,2}\|\f\)')
-                let context.includes+= [s:globexpr(a:in)]
-            endwhile
-            call s:expect(a:in, ')')
-        endif
-        if s:lookahead(a:in, 'excludes')
-            call s:expect(a:in, 'excludes')
-            call s:expect(a:in, '(')
-            let context.excludes= []
-            while s:lookahead(a:in, '\%(\*\{1,2}\|\f\)')
-                let context.excludes+= [s:globexpr(a:in)]
-            endwhile
-            call s:expect(a:in, ')')
-        endif
+        let context.options= []
+        while s:lookahead(a:in, '\%(includes\|excludes\)')
+            let context.options+= [s:local_bundle_option(a:in)]
+        endwhile
     else
         let context.repository= s:repository(a:in)
-        if s:lookahead(a:in, 'as')
-            call s:expect(a:in, 'as')
-            let context.alias= []
+        let context.options= []
+        while s:lookahead(a:in, '\%(as\|enable_if\|depends\)')
+            let context.options+= [s:bundle_option(a:in)]
+        endwhile
+    endif
+    return context
+endfunction
+
+function! s:bundle_option(in) abort
+    let context= {}
+    if s:lookahead(a:in, 'as')
+        call s:expect(a:in, 'as')
+        let context.alias= []
+        let context.alias+= [s:alias(a:in)]
+        while s:lookahead(a:in, ',')
+            call s:expect(a:in, ',')
             let context.alias+= [s:alias(a:in)]
-            while s:lookahead(a:in, ',')
-                call s:expect(a:in, ',')
-                let context.alias+= [s:alias(a:in)]
-            endwhile
-        endif
-        if s:lookahead(a:in, 'enable_if')
-            call s:expect(a:in, 'enable_if')
-            let context.enable_if= {'String': s:String(a:in)}
-        endif
-        if s:lookahead(a:in, 'depends')
-            call s:expect(a:in, 'depends')
-            call s:expect(a:in, '(')
-            let context.dependency= []
-            while s:lookahead(a:in, '[^)]')
-                let context.dependency+= [s:dependency(a:in)]
-            endwhile
-            call s:expect(a:in, ')')
-        endif
+        endwhile
+    elseif s:lookahead(a:in, 'enable_if')
+        call s:expect(a:in, 'enable_if')
+        let context.enable_if= {'String': s:String(a:in)}
+    elseif s:lookahead(a:in, 'depends')
+        call s:expect(a:in, 'depends')
+        call s:expect(a:in, '(')
+        let context.dependency= []
+        while s:lookahead(a:in, '[^)]')
+            let context.dependency+= [s:dependency(a:in)]
+        endwhile
+        call s:expect(a:in, ')')
+    else
+        throw printf("")
+    endif
+    return context
+endfunction
+
+function! s:local_bundle_option(in) abort
+    let context= {}
+    if s:lookahead(a:in, 'includes')
+        call s:expect(a:in, 'includes')
+        call s:expect(a:in, '(')
+        let context.includes= []
+        while s:lookahead(a:in, '\%(\*\{1,2}\|\f\)')
+            let context.includes+= [s:globexpr(a:in)]
+        endwhile
+        call s:expect(a:in, ')')
+    elseif s:lookahead(a:in, 'excludes')
+        call s:expect(a:in, 'excludes')
+        call s:expect(a:in, '(')
+        let context.excludes= []
+        while s:lookahead(a:in, '\%(\*\{1,2}\|\f\)')
+            let context.excludes+= [s:globexpr(a:in)]
+        endwhile
+        call s:expect(a:in, ')')
+    else
+        throw printf("")
     endif
     return context
 endfunction

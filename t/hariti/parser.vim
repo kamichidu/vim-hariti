@@ -9,53 +9,67 @@ function! s:suite.parse()
     \   'bundle': [
     \       {
     \           'repository': {'Identifier': ['kamichidu', 'vim-unite-javaimport']},
-    \           'alias': [{'Identifier': 'unite-javaimport'}, {'Identifier': 'javaimport'}],
-    \           'dependency': [
-    \               {
-    \                   'repository': {'Identifier': ['Shougo', 'unite.vim'],},
-    \               },
-    \               {
-    \                   'repository': {'Identifier': ['vim-javaclasspath'],},
-    \               },
+    \           'options': [
+    \               {'alias': [{'Identifier': 'unite-javaimport'}, {'Identifier': 'javaimport'}]},
+    \               {'dependency': [
+    \                   {
+    \                       'repository': {'Identifier': ['Shougo', 'unite.vim'],},
+    \                   },
+    \                   {
+    \                       'repository': {'Identifier': ['vim-javaclasspath'],},
+    \                   },
+    \               ]},
     \           ],
     \       },
     \       {
     \           'repository': {'Identifier': ['kamichidu', 'vim-javaclasspath']},
+    \           'options': [],
     \       },
     \       {
     \           'repository': {'Identifier': ['kamichidu', 'vim-javaclasspath']},
-    \           'dependency': [
-    \               {
-    \                   'repository': {'Identifier': ['kamichidu', 'vim-javaclasspath'],},
-    \               },
+    \           'options': [
+    \               {'dependency': [
+    \                   {
+    \                       'repository': {'Identifier': ['kamichidu', 'vim-javaclasspath'],},
+    \                   },
+    \               ]},
     \           ],
     \       },
     \       {
     \           'repository': {'Identifier': ['kamichidu', 'vim-milqi']},
-    \           'alias': [{'Identifier': 'milqi'}],
+    \           'options': [
+    \               {'alias': [{'Identifier': 'milqi'}]},
+    \           ],
     \       },
     \       {
     \           'filepath': {'Path': '~/hoge/fuga/'},
+    \           'options': [],
     \       },
     \       {
     \           'filepath': {'Path': '~/hoge/fuga'},
-    \           'includes': [
-    \               {'GlobExpr': '**/*/piyo/'},
+    \           'options': [
+    \               {'includes': [
+    \                   {'GlobExpr': '**/*/piyo/'},
+    \               ]},
     \           ],
     \       },
     \       {
     \           'filepath': {'Path': '~/hoge/fuga'},
-    \           'excludes': [
-    \               {'GlobExpr': '**/*/piyo/'},
+    \           'options': [
+    \               {'excludes': [
+    \                   {'GlobExpr': '**/*/piyo/'},
+    \               ]},
     \           ],
     \       },
     \       {
     \           'filepath': {'Path': '~/hoge/fuga'},
-    \           'includes': [
-    \               {'GlobExpr': '**/*/piyo/'},
-    \           ],
-    \           'excludes': [
-    \               {'GlobExpr': '**/*/piyo/'},
+    \           'options': [
+    \               {'includes': [
+    \                   {'GlobExpr': '**/*/piyo/'},
+    \               ]},
+    \               {'excludes': [
+    \                   {'GlobExpr': '**/*/piyo/'},
+    \               ]},
     \           ],
     \       },
     \   ],

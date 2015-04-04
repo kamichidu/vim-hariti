@@ -133,6 +133,22 @@ function! s:parse(config)
 endfunction
 
 function! s:build_internal(config, context)
+    " transform
+    for bundle in a:context.bundle
+        for option in bundle.options
+            for key in keys(option)
+                if type(option[key]) == type([])
+                    let bundle[key]= get(bundle, key, []) + option[key]
+                elseif type(option[key]) == type({})
+                    let bundle[key]= extend(get(bundle, key, {}), option[key])
+                else
+                    let bundle[key]= option[key]
+                endif
+            endfor
+        endfor
+        call remove(bundle, 'options')
+    endfor
+
     let aliases= s:make_aliases(a:config, a:context)
     let bundles= []
     for bundle in a:context.bundle
@@ -159,8 +175,8 @@ function! s:make_bundles(config, aliases, bundle) abort
     let bundles= []
     if has_key(a:bundle, 'dependency')
         for dependency in a:bundle.dependency
-            if has_key(a:aliases, join(dependency.repository.Identifier, '/'))
-                let info= a:aliases[join(dependency.repository.Identifier, '/')]
+            if has_key(a:aliases, dependency.repository.Identifier[-1])
+                let info= a:aliases[dependency.repository.Identifier[-1]]
             else
                 let info= [{
                 \   'url': s:make_url(dependency.repository),

@@ -4,14 +4,22 @@ file
 
 bundle
     : 'use' repository
-      ('as' alias (',' alias)*)?
-      ('enable_if' String)?
-      ('depends' '('
-        dependency*
-      ')')?
+      bundle_option*
     | 'use' 'local' filepath
-      ('includes' '(' globexpr* ')')?
-      ('excludes' '(' globexpr* ')')?
+      local_bundle_option*
+    ;
+
+bundle_option
+    : 'as' alias (',' alias)*
+    | 'enable_if' String
+    | 'depends' '('
+        dependency*
+      ')'
+    ;
+
+local_bundle_option
+    : 'includes' '(' globexpr* ')'
+    | 'excludes' '(' globexpr* ')'
     ;
 
 repository
