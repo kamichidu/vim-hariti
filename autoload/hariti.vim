@@ -51,33 +51,5 @@ function! s:enabled(name) abort
     return index(s:names, a:name) != -1
 endfunction
 
-" function! s:download(prefix, plugins)
-"     let git_protocols= filter(copy(a:plugins), 'v:val.protocol ==# "git"')
-"     let hg_protocols= filter(copy(a:plugins), 'v:val.protocol ==# "hg"')
-"
-"     let save_cwd= getcwd()
-"     try
-"         execute 'lcd' a:prefix
-"
-"         lua << ...
-"         local urls= vim.eval('urls')
-"
-"         local gits= {}
-"         for url in urls() do
-"             table.insert(gits, io.popen('GIT_ASKPASS=/usr/bin/false git clone ' .. url))
-"         end
-"
-"         for git in ipairs(gits) do
-"             local ok, msg= git:close()
-"             if not ok then
-"                 vim.command('hariti: Something wrong `' .. msg .. "'.")
-"             end
-"         end
-"
-"     finally
-"         execute 'lcd' save_cwd
-"     endtry
-" endfunction
-
 let &cpo= s:save_cpo
 unlet s:save_cpo
