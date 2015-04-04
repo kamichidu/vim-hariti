@@ -214,6 +214,7 @@ function! s:make_bundles(config, aliases, bundle) abort
     if has_key(a:bundle, 'enable_if')
         let info.enable_if= a:bundle.enable_if.String[1 : -2]
     endif
+    let bundles+= [info]
     return bundles
 endfunction
 
