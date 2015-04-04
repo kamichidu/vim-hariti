@@ -24,6 +24,7 @@ set cpo&vim
 
 let s:plugin_base= expand('<sfile>:p:h:h:h')
 let s:util= hariti#util#get()
+let s:bundler= hariti#bundler#get()
 
 function! hariti#builder#build(config)
     try
@@ -33,7 +34,7 @@ function! hariti#builder#build(config)
         let rtp= hariti#builder#append_after_directory(new_rtp)
 
         call hariti#builder#write_tapfile(a:config, aliases)
-        call hariti#builder#download(ext_rtp)
+        call hariti#builder#download(a:config, ext_rtp)
 
         call hariti#builder#write_script(a:config, rtp)
     catch
@@ -52,15 +53,13 @@ function! hariti#builder#write_tapfile(config, aliases)
     call writefile(keys(a:aliases), a:config.tap_filename)
 endfunction
 
-function! hariti#builder#download(items)
-    let items= filter(copy(a:items), 'has_key(v:val, "url")')
+function! hariti#builder#download(config, rtp)
+    " only downloadables
+    let items= filter(copy(a:rtp), 'has_key(v:val, "url")')
+    " not yet downloaded
+    let items= filter(copy(items), '!isdirectory(v:val.path)')
 
-    for item in items
-        if !isdirectory(item.path)
-            echo "Clone" item.url "to" item.path
-            echo system(printf('git clone "%s" "%s"', item.url, item.path))
-        endif
-    endfor
+    call s:bundler.install(a:config, items)
 endfunction
 
 function! hariti#builder#original_runtimepath()
