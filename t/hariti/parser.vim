@@ -78,4 +78,27 @@ function! s:suite.__parse__()
         \   ],
         \})
     endfunction
+
+    function! parse.build_script() abort
+        let parser= hariti#parser#new(readfile('t/fixtures/bundles-build'))
+        let data= parser.parse()
+
+        call s:assert.equals(data, {
+        \   'bundle': [
+        \       {
+        \           'repository': {'Identifier': ['Shougo', 'neocomplete.vim']},
+        \           'options': [
+        \               {'alias': [{'Identifier': 'neco'}, {'Identifier': 'neocomplete'}]},
+        \               {'enable_if': {'String': '"has(''lua'')"'}},
+        \               {'build': {
+        \                   'windows': [{'ShellScript': 'win first'}, {'ShellScript': 'win second'}, {'ShellScript': 'win third'}],
+        \                   'mac': [{'ShellScript': 'mac first'}],
+        \                   'unix': [{'ShellScript': 'unix first'}],
+        \                   '*': [],
+        \               }},
+        \           ],
+        \       },
+        \   ],
+        \})
+    endfunction
 endfunction

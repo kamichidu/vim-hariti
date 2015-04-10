@@ -1,0 +1,14 @@
+use Shougo/neocomplete.vim
+    as neco, neocomplete
+    enable_if "has('lua')"
+    build {
+        on windows
+            - win first
+            - win second
+            - win third
+        on mac
+            - mac first
+        on unix
+            - unix first
+        on *
+    }

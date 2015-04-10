@@ -103,7 +103,7 @@ function! s:bundle(in) abort
     else
         let context.repository= s:repository(a:in)
         let context.options= []
-        while s:lookahead(a:in, '[aed]')
+        while s:lookahead(a:in, '[aedb]')
             let context.options+= [s:bundle_option(a:in)]
         endwhile
     endif
@@ -131,10 +131,31 @@ function! s:bundle_option(in) abort
             let context.dependency+= [s:dependency(a:in)]
         endwhile
         call s:expect(a:in, ')')
+    elseif s:lookahead(a:in, 'build')
+        call s:expect(a:in, 'build')
+        call s:expect(a:in, '{')
+        let context.build= {}
+        while s:lookahead(a:in, '[o]')
+            let child_context= s:build_script(a:in)
+            let context.build[child_context.platform]= get(context.build, child_context.platform, []) + child_context.script
+        endwhile
+        call s:expect(a:in, '}')
     else
         let [lnum, col]= s:where_is(a:in)
         throw printf('hariti: Expects \%(as\|enable_if\|depends\). (line %d, column %d)', lnum, col)
     endif
+    return context
+endfunction
+
+function! s:build_script(in) abort
+    let context= {}
+    call s:expect(a:in, 'on')
+    let context.platform= s:match(a:in, '\%(windows\|mac\|unix\|\*\)')
+    let context.script= []
+    while s:lookahead(a:in, '-')
+        call s:expect(a:in, '-')
+        let context.script+= [{'ShellScript': s:ShellScript(a:in)}]
+    endwhile
     return context
 endfunction
 
@@ -213,6 +234,10 @@ endfunction
 
 function! s:Path(in) abort
     return s:match(a:in, '\f\+')
+endfunction
+
+function! s:ShellScript(in) abort
+    return s:match(a:in, '[^\r\n]*')
 endfunction
 
 function! hariti#parser#new(input, ...) abort

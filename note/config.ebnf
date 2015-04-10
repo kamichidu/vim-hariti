@@ -15,6 +15,16 @@ bundle_option
     | 'depends' '('
         dependency*
       ')'
+    | 'build' '{'
+        build_script*
+      '}'
+    ;
+
+build_script
+    : 'on' 'windows' ('-' ShellScript)+
+    | 'on' 'mac'     ('-' ShellScript)+
+    | 'on' 'unix'    ('-' ShellScript)+
+    | 'on' '*'       ('-' ShellScript)+
     ;
 
 local_bundle_option
@@ -57,4 +67,8 @@ GlobExpr
 
 Path
     : \f+
+    ;
+
+ShellScript
+    : [^\r\n]*
     ;
