@@ -52,5 +52,9 @@ command!
 \   HaritiDocs
 \   call hariti#builder#docs(g:hariti_config)
 
+command!
+\   HaritiUpdate
+\   call hariti#builder#bundle_update(g:hariti_config)
+
 let &cpo= s:save_cpo
 unlet s:save_cpo

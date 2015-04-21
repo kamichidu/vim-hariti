@@ -189,6 +189,33 @@ function! hariti#builder#helptags(config, rtp) abort
     endfor
 endfunction
 
+function! hariti#builder#bundle_update(config) abort
+    echomsg 'hariti: Updating bundles...'
+    try
+        let [ext_rtp, _]= s:parse(a:config)
+        let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url") && isdirectory(v:val.path)')
+
+        for bundle in bundles
+            let cwd= getcwd()
+            try
+                execute 'lcd' bundle.path
+
+                let command= 'git fetch origin && git merge origin/master'
+                for output in split(system(command), "\n")
+                    echomsg output
+                endfor
+            finally
+                execute 'lcd' cwd
+            endtry
+        endfor
+    catch
+        echohl Error
+        echomsg v:throwpoint
+        echomsg v:exception
+        echohl None
+    endtry
+endfunction
+
 function! s:parse(config)
     if !filereadable(a:config.source_filename)
         throw printf("hariti: No such file `%s'", a:config.source_filename)
