@@ -35,6 +35,7 @@ function! hariti#builder#build(config)
 
         call hariti#builder#write_tapfile(a:config, aliases)
         call hariti#builder#download(a:config, ext_rtp)
+        call hariti#builder#run_script(a:config, ext_rtp)
 
         call hariti#builder#write_script(a:config, rtp)
     catch
@@ -135,6 +136,36 @@ function! hariti#builder#merge_runtimepath(origin, ext)
     return a:origin[ : max([pos, 0])] + a:ext + a:origin[pos + 1 : ]
 endfunction
 
+function! hariti#builder#run_script(config, rtp) abort
+    let bundles= filter(copy(a:rtp), 'has_key(v:val, "build")')
+    let script= []
+
+    for bundle in bundles
+        if has('win16') || has('win32') || has('win64') || has('win95')
+            let script+= get(bundle.build, 'windows', [])
+        elseif has('mac')
+            let script+= get(bundle.build, 'mac', [])
+        else
+            let script+= get(bundle.build, 'unix', [])
+        endif
+        let script+= get(bundle.build, '*', [])
+
+        let cwd= getcwd()
+        try
+            execute 'lcd' bundle.path
+
+            echomsg printf('hariti: Executing user build script for %s', matchstr(bundle.path, '/\zs[^/]\+$'))
+            for cmd in script
+                for output in split(system(cmd), "\n")
+                    echomsg output
+                endfor
+            endfor
+        finally
+            execute 'lcd' cwd
+        endtry
+    endfor
+endfunction
+
 function! s:parse(config)
     if !filereadable(a:config.source_filename)
         throw printf("hariti: No such file `%s'", a:config.source_filename)
@@ -214,6 +245,12 @@ function! s:make_bundles(config, aliases, bundle) abort
     if has_key(a:bundle, 'enable_if')
         let info.enable_if= a:bundle.enable_if.String[1 : -2]
     endif
+    if has_key(a:bundle, 'build')
+        let info.build= {}
+        for platform in keys(a:bundle.build)
+            let info.build[platform]= get(info.build, platform, []) + map(copy(a:bundle.build[platform]), 'v:val.ShellScript')
+        endfor
+    endif
     let bundles+= [info]
     return bundles
 endfunction
@@ -254,6 +291,12 @@ function! s:make_aliases(config, context) abort
         \}
         if has_key(bundle, 'enable_if')
             let data.enable_if= bundle.enable_if.String[1 : -2]
+        endif
+        if has_key(bundle, 'build')
+            let data.build= {}
+            for platform in keys(bundle.build)
+                let data.build[platform]= get(data.build, platform, []) + map(copy(bundle.build[platform]), 'v:val.ShellScript')
+            endfor
         endif
 
         " url => data
