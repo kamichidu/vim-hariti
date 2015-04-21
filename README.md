@@ -59,6 +59,14 @@ Usage
     It builds your &runtimepath without applying.
     You can execute this command when you edit [bundles file](#bundles-file-grammar).
 
+* HaritiDocs
+
+    It generates helptags for all bundles.
+
+* HaritiUpdate
+
+    It updates bundles except local-bundles.
+
 * hariti#tap({name})
 
     It returns 1 if a plug-in it has a {name} is installed.
@@ -89,6 +97,10 @@ Complete grammar description [here](note/config.ebnf).
 
     `depends ({dependant plug-in})`
 
+* Some shell or dosbatch scripts will run
+
+    See vimproc [example](#example).
+
 
 Example <a name="example">
 ------------------------------------------------------------------------------------------------------------------------
@@ -104,6 +116,19 @@ use kamichidu/vim-unite-javaimport
         Shougo/unite.vim
         kamichidu/vim-javaclasspath
     )
+
+use Shougo/vimproc.vim
+    as vimproc
+    build {
+        on windows
+            - mingw32-make -f make_mingw64.mak
+        on mac
+            - make -f make_mac.mak
+        on unix
+            - make
+        on *
+            - echo 'success'
+    }
 
 use Shougo/neocomplete.vim
     as neco, neocomplete
