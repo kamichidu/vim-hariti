@@ -36,6 +36,7 @@ function! hariti#builder#build(config)
         call hariti#builder#write_tapfile(a:config, aliases)
         call hariti#builder#download(a:config, ext_rtp)
         call hariti#builder#run_script(a:config, ext_rtp)
+        call hariti#builder#helptags(a:config, ext_rtp)
 
         call hariti#builder#write_script(a:config, rtp)
     catch
@@ -163,6 +164,28 @@ function! hariti#builder#run_script(config, rtp) abort
         finally
             execute 'lcd' cwd
         endtry
+    endfor
+endfunction
+
+function! hariti#builder#docs(config) abort
+    try
+        let [ext_rtp, _]= s:parse(a:config)
+
+        call hariti#builder#helptags(a:config, ext_rtp)
+    catch
+        echohl Error
+        echomsg v:throwpoint
+        echomsg v:exception
+        echohl None
+    endtry
+endfunction
+
+function! hariti#builder#helptags(config, rtp) abort
+    echomsg 'hariti: Generating helptags...'
+    let bundles= filter(copy(a:rtp), 'isdirectory(v:val.path . "/doc/") && globpath(v:val.path . "/doc/", "**") !=# ""')
+
+    for bundle in bundles
+        execute 'helptags' s:util.unify_separator(bundle.path . '/doc/')
     endfor
 endfunction
 

@@ -48,5 +48,9 @@ command!
 \   HaritiSetup
 \   filetype off | call hariti#loader#load(g:hariti_config) | filetype plugin indent on
 
+command!
+\   HaritiDocs
+\   call hariti#builder#docs(g:hariti_config)
+
 let &cpo= s:save_cpo
 unlet s:save_cpo
