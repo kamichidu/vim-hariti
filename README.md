@@ -72,6 +72,18 @@ Usage
     It returns 1 if a plug-in it has a {name} is installed.
     Otherwise, 0.
 
+* g:hariti\_bundles
+
+    This variable is intended to use for alternative of hariti#tap().
+    Vim script is tooo slow to call function, but variable access is fast.
+    You can write alternate hariti#tap() likes below:
+
+        ```vim
+        if get(g:hariti_bundles, 'name', 0)
+            ... some configuration ...
+        endif
+        ```
+
 
 Bundles file grammar
 ------------------------------------------------------------------------------------------------------------------------
