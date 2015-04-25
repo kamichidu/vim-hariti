@@ -317,13 +317,17 @@ function! s:make_local_bundles(config, aliases, bundle) abort
     if has_key(a:bundle, 'includes')
         for expr in a:bundle.includes
             let pat= '^' . substitute(expr.GlobExpr, '\*', '.*', 'g') . '$'
-            call filter(dirs, 'fnamemodify(v:val, ":t") =~# pat')
+            " fnamemodify('fuga/hoge/', ':t') => ''
+            " fnamemodify('fuga/hoge/', ':h:t') => 'hoge'
+            call filter(dirs, 'fnamemodify(v:val, ":h:t") =~# pat')
         endfor
     endif
     if has_key(a:bundle, 'excludes')
         for expr in a:bundle.excludes
             let pat= '^' . substitute(expr.GlobExpr, '\*', '.*', 'g') . '$'
-            call filter(dirs, 'fnamemodify(v:val, ":t") !~# pat')
+            " fnamemodify('fuga/hoge/', ':t') => ''
+            " fnamemodify('fuga/hoge/', ':h:t') => 'hoge'
+            call filter(dirs, 'fnamemodify(v:val, ":h:t") !~# pat')
         endfor
     endif
 
