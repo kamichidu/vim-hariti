@@ -36,6 +36,8 @@ let g:hariti_config.tap_filename= get(g:hariti_config, 'tap_filename', expand('~
 let g:hariti_config.bundle_directory= get(g:hariti_config, 'bundle_directory', expand('~/.hariti/bundle/'))
 let g:hariti_config.backup_directory= get(g:hariti_config, 'backup_directory', expand('~/.hariti/backup/'))
 
+let g:hariti_bundles= {}
+
 command!
 \   HaritiBuild
 \   call hariti#builder#build(g:hariti_config)
