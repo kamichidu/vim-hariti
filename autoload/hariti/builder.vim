@@ -195,19 +195,7 @@ function! hariti#builder#bundle_update(config) abort
         let [ext_rtp, _]= s:parse(a:config)
         let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url") && isdirectory(v:val.path)')
 
-        for bundle in bundles
-            let cwd= getcwd()
-            try
-                execute 'lcd' bundle.path
-
-                let command= 'git fetch origin && git merge origin/master'
-                for output in split(system(command), "\n")
-                    echomsg output
-                endfor
-            finally
-                execute 'lcd' cwd
-            endtry
-        endfor
+        call s:bundler.update(a:config, bundles)
     catch
         echohl Error
         echomsg v:throwpoint

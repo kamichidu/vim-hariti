@@ -35,8 +35,9 @@ function! hariti#bundler#install(config, datalist) abort
 endfunction
 
 function! hariti#bundler#update(config, datalist) abort
-    throw "Not yet implemented."
-    let rev= get(a:data, 'rev', 'HEAD')
+    let backend= executable(s:go_backend) ? 'go' : 'vim'
+
+    call s:update_{backend}(a:config, a:datalist)
 endfunction
 
 function! hariti#bundler#uninstall(config, datalist) abort
@@ -74,16 +75,44 @@ function! s:install_go(config, datalist) abort
 
     echomsg printf('hariti: Start %d bundles...', len(a:datalist))
     let output= system(s:go_backend, join(input, "\n"))
+    call vimconsole#log(output)
     for line in split(output, "\n")
-        let [id, state]= split(line, "\t")
+        let notice= split(line, "\t")
+        call vimconsole#log(notice)
+        let [id, state]= [notice[0], notice[1]]
         if state ==# '<START>'
             " no message
         elseif state ==# '<FINISH>'
             echomsg printf('hariti: %s - finish', id2name[id])
+        elseif state ==# '<ERROR>'
+            echomsg printf('hariti: %s - error - %s', id2name[id], substitute(notice[2], '\\n', "\n", 'g'))
         else
             echomsg printf('hariti: %s - ???', id2name[id])
         endif
     endfor
+endfunction
+
+function! s:update_vim(config, datalist) abort
+    let total= len(a:datalist)
+    let done= 0
+
+    for data in a:datalist
+        let done+= 1
+        let cwd= getcwd()
+        try
+            execute 'lcd' data.path
+
+            let command= 'git pull --ff --ff-only'
+            let output= system(command)
+            echomsg printf('(%d/%d) %s', done, total, output)
+        finally
+            execute 'lcd' cwd
+        endtry
+    endfor
+endfunction
+
+function! s:update_go(config, datalist) abort
+    call s:install_go(a:config, a:datalist)
 endfunction
 
 let &cpo= s:save_cpo
