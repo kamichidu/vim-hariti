@@ -22,8 +22,14 @@
 let s:save_cpo= &cpo
 set cpo&vim
 
+let s:plugin_dir= expand('<sfile>:h:h:h')
+let s:go_backend= s:plugin_dir . '/bin/hariti'
+if has('win16') || has('win32') || has('win64') || has('win95')
+    let s:go_backend.= '.exe'
+endif
+
 function! hariti#bundler#install(config, datalist) abort
-    let backend= 'vim'
+    let backend= executable(s:go_backend) ? 'go' : 'vim'
 
     call s:install_{backend}(a:config, a:datalist)
 endfunction
@@ -53,6 +59,30 @@ function! s:install_vim(config, datalist) abort
         let done+= 1
         let output= system(printf('git clone %s %s', data.url, data.path))
         echomsg printf('(%d/%d) %s', done, total, output)
+    endfor
+endfunction
+
+function! s:install_go(config, datalist) abort
+    let input= []
+    let id= 0
+    let id2name= {}
+    for data in a:datalist
+        let id2name[id]= matchstr(data.url, '/\zs[^/]\+$')
+        let input+= [join([id, 'git', data.url, data.path], "\t")]
+        let id+= 1
+    endfor
+
+    echomsg printf('hariti: Start %d bundles...', len(a:datalist))
+    let output= system(s:go_backend, join(input, "\n"))
+    for line in split(output, "\n")
+        let [id, state]= split(line, "\t")
+        if state ==# '<START>'
+            " no message
+        elseif state ==# '<FINISH>'
+            echomsg printf('hariti: %s - finish', id2name[id])
+        else
+            echomsg printf('hariti: %s - ???', id2name[id])
+        endif
     endfor
 endfunction
 
