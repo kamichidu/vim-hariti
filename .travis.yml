@@ -1,12 +1,68 @@
 language: shell
 
+env:
+  global:
+    - GO_VERSION=1.4.2
+    - GIT_COMMITTER_NAME=kamichidu
+    - GIT_COMMITTER_EMAIL=c.kamunagi@gmail.com
+    - GIT_AUTHOR_NAME=kamichidu
+    - GIT_AUTHOR_EMAIL=c.kamunagi@gmail.com
+    - secure: mWu5DftuE83haj/19NMaH0t104dyle69jRuQpdQTiONVK1uuf4KEqXeL62jmTumMhVr3qgremP2qHTBB3XhWJk0f8aOxzx1tDQr3PzeOgzcQIDmxLXSEqA/imkerAMZIzqPcZ6L9koB5mlodkHda02NFsknGh1mLCrydaUnsNyY=
+
 sudo: required
+
+before_install:
+  # install golang
+  - pushd ~/
+  - curl -L -o go.tar.gz https://github.com/golang/go/archive/go${GO_VERSION}.tar.gz
+  - tar xzf go.tar.gz
+  - mv go-go${GO_VERSION} go
+  - export GOROOT=~/go
+  - export GOPATH=~/gopath/
+  - export PATH=$GOROOT/bin:$PATH
+  - popd
+
+  - pushd $GOROOT/src/
+  - ./make.bash >/dev/null 2>&1
+  - popd
 
 install:
   - sudo add-apt-repository ppa:pi-rho/dev -y
   - sudo apt-get update -q
   - sudo apt-get install vim-nox
 
-before_script: vim --version
+before_script:
+  - vim --version
+  - go version
+  - go env
 
 script: sh ./themis.sh
+
+after_success:
+  # stop if latest commit is by myself, suppress infinite loop
+  - '[[ $(git log HEAD~..HEAD --oneline --grep "^\[auto-commit\]") ]] && exit 0'
+  # setup cross compiling environment
+  - pushd `go env GOROOT`/src
+  - GOOS=windows GOARCH=amd64 ./make.bash --no-clean >/dev/null 2>&1
+  - GOOS=windows GOARCH=386   ./make.bash --no-clean >/dev/null 2>&1
+  - GOOS=darwin  GOARCH=amd64 ./make.bash --no-clean >/dev/null 2>&1
+  - GOOS=darwin  GOARCH=386   ./make.bash --no-clean >/dev/null 2>&1
+  - GOOS=linux   GOARCH=amd64 ./make.bash --no-clean >/dev/null 2>&1
+  - GOOS=linux   GOARCH=386   ./make.bash --no-clean >/dev/null 2>&1
+  - popd
+  # cross compile
+  - pushd go/
+  - GOOS=windows GOARCH=amd64 go build hariti.go && mv hariti.exe ../bin/hariti.win64.exe
+  - GOOS=windows GOARCH=386   go build hariti.go && mv hariti.exe ../bin/hariti.win32.exe
+  - GOOS=darwin  GOARCH=amd64 go build hariti.go && mv hariti     ../bin/hariti.mac64
+  - GOOS=darwin  GOARCH=386   go build hariti.go && mv hariti     ../bin/hariti.mac32
+  - GOOS=linux   GOARCH=amd64 go build hariti.go && mv hariti     ../bin/hariti.x64
+  - GOOS=linux   GOARCH=386   go build hariti.go && mv hariti     ../bin/hariti.x86
+  - popd
+  # restore detached state
+  - git checkout $TRAVIS_BRANCH
+  # push when bin/ changes
+  - git add bin/
+  - git status
+  - git commit -m '[auto-commit] Latest binary.'
+  - '[ "$TRAVIS_BRANCH" == "master" ] && [ $GH_TOKEN ] && git push --quiet https://$GH_TOKEN@github.com/kamichidu/vim-hariti master 2>/dev/null'
