@@ -36,7 +36,20 @@ let g:hariti_config.tap_filename= get(g:hariti_config, 'tap_filename', expand('~
 let g:hariti_config.bundle_directory= get(g:hariti_config, 'bundle_directory', expand('~/.hariti/bundle/'))
 let g:hariti_config.backup_directory= get(g:hariti_config, 'backup_directory', expand('~/.hariti/backup/'))
 
+" for faster cheking bundles what enabled
 let g:hariti_bundles= {}
+function! s:detect_bundles_state() abort
+    if !filereadable(g:hariti_config.tap_filename)
+        return
+    endif
+
+    for record in readfile(g:hariti_config.tap_filename)
+        let [key, expr]= [matchstr(record, '^[^\t]\+'), matchstr(record, '\t\zs.*$')]
+        let g:hariti_bundles[key]= eval(expr)
+    endfor
+endfunction
+call s:detect_bundles_state()
+lockvar g:hariti_bundles
 
 command!
 \   HaritiBuild
