@@ -24,8 +24,20 @@ set cpo&vim
 
 let s:plugin_dir= expand('<sfile>:h:h:h')
 let s:go_backend= s:plugin_dir . '/bin/hariti'
-if has('win16') || has('win32') || has('win64') || has('win95')
-    let s:go_backend.= '.exe'
+" detect suffix
+if has('win16') || has('win32') || has('win95')
+    let s:go_backend.= '.win32.exe'
+elseif has('win64')
+    let s:go_backend.= '.win64.exe'
+elseif has('mac')
+    let s:go_backend.= '.mac32'
+else
+    " this is a vimproc's way
+    if glob('/lib*/ld-linux*64.so.2', 1) !=# ''
+        let s:go_backend.= '.x64'
+    else
+        let s:go_backend.= '.x86'
+    endif
 endif
 
 function! hariti#bundler#install(config, datalist) abort
