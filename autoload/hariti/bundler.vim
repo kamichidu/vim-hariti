@@ -87,10 +87,8 @@ function! s:install_go(config, datalist) abort
 
     echomsg printf('hariti: Start %d bundles...', len(a:datalist))
     let output= system(s:go_backend, join(input, "\n"))
-    call vimconsole#log(output)
     for line in split(output, "\n")
         let notice= split(line, "\t")
-        call vimconsole#log(notice)
         let [id, state]= [notice[0], notice[1]]
         if state ==# '<START>'
             " no message
