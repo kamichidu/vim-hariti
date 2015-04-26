@@ -128,13 +128,9 @@ endfunction
 
 function! hariti#builder#merge_runtimepath(origin, ext)
     " find appendable pos
-    for pos in reverse(range(0, len(a:origin) - 1))
-        if a:origin[pos].path !~? '[/\\]after[/\\]\?$'
-            break
-        endif
-    endfor
+    let pos= index(map(copy(a:origin), 'v:val.path'), $VIMRUNTIME)
 
-    return a:origin[ : max([pos, 0])] + a:ext + a:origin[pos + 1 : ]
+    return a:origin[ : max([pos - 1, 0])] + a:ext + a:origin[pos : ]
 endfunction
 
 function! hariti#builder#run_script(config, rtp) abort
