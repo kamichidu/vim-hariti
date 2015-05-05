@@ -96,7 +96,11 @@ function! hariti#builder#append_after_directory(rtp)
     let dirs= []
     for info in a:rtp
         if isdirectory(info.path . '/after/')
-            let dirs+= [{'path': info.path . '/after/'}]
+            let after_bundle= {'path': info.path . '/after/'}
+            if has_key(info, 'enable_if')
+                let after_bundle.enable_if= info.enable_if
+            endif
+            let dirs+= [after_bundle]
         endif
     endfor
     return a:rtp + dirs
