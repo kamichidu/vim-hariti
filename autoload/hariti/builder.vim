@@ -28,7 +28,7 @@ let s:bundler= hariti#bundler#get()
 
 function! hariti#builder#build(config)
     try
-        let orig_rtp= hariti#builder#original_runtimepath()
+        let orig_rtp= hariti#builder#original_runtimepath(a:config)
         let [ext_rtp, aliases]= s:parse(a:config)
         let new_rtp= hariti#builder#merge_runtimepath(orig_rtp, ext_rtp)
         let rtp= hariti#builder#append_after_directory(new_rtp)
@@ -78,18 +78,18 @@ function! hariti#builder#download(config, rtp)
     call s:bundler.install(a:config, items)
 endfunction
 
-function! hariti#builder#original_runtimepath()
-    let paths= split(&runtimepath, ',')
-    for pos in range(0, len(paths) - 1)
-        if paths[pos] ==# $VIMRUNTIME
-            let ret= paths[ : pos]
-        endif
-    endfor
-    " can't detect
-    if !exists('ret')
-        let ret= paths
+function! hariti#builder#original_runtimepath(config)
+    " {backup_directory}/rtp always has original runtimepath
+    " if has('vim_starting') is 1, getting rtp from &runtimepath is faster than reading file
+    let backup_filename= s:util.unify_separator(a:config.backup_directory . '/rtp')
+
+    if has('vim_starting') || !filereadable(backup_filename)
+        let paths= split(&runtimepath, ',')
+    else
+        let paths= readfile(backup_filename)
     endif
-    return map(copy(ret), "{'path': v:val}")
+
+    return map(copy(paths), "{'path': v:val}")
 endfunction
 
 function! hariti#builder#append_after_directory(rtp)
