@@ -51,14 +51,7 @@ after_success:
   - GOOS=linux   GOARCH=386   ./make.bash --no-clean >/dev/null 2>&1
   - popd
   # cross compile
-  - pushd go/
-  - GOOS=windows GOARCH=amd64 go build hariti.go && mv hariti.exe ../bin/hariti.win64.exe
-  - GOOS=windows GOARCH=386   go build hariti.go && mv hariti.exe ../bin/hariti.win32.exe
-  - GOOS=darwin  GOARCH=amd64 go build hariti.go && mv hariti     ../bin/hariti.mac64
-  - GOOS=darwin  GOARCH=386   go build hariti.go && mv hariti     ../bin/hariti.mac32
-  - GOOS=linux   GOARCH=amd64 go build hariti.go && mv hariti     ../bin/hariti.x64
-  - GOOS=linux   GOARCH=386   go build hariti.go && mv hariti     ../bin/hariti.x86
-  - popd
+  - make -C bin/
   # restore detached state
   - git checkout $TRAVIS_BRANCH
   # push when bin/ changes
