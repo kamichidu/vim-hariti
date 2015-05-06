@@ -42,16 +42,9 @@ after_success:
   # stop if latest commit is by myself, suppress infinite loop
   - '[[ $(git log HEAD~..HEAD --oneline --grep "^\[auto-commit\]") ]] && exit 0'
   # setup cross compiling environment
-  - pushd `go env GOROOT`/src
-  - GOOS=windows GOARCH=amd64 ./make.bash --no-clean >/dev/null 2>&1
-  - GOOS=windows GOARCH=386   ./make.bash --no-clean >/dev/null 2>&1
-  - GOOS=darwin  GOARCH=amd64 ./make.bash --no-clean >/dev/null 2>&1
-  - GOOS=darwin  GOARCH=386   ./make.bash --no-clean >/dev/null 2>&1
-  - GOOS=linux   GOARCH=amd64 ./make.bash --no-clean >/dev/null 2>&1
-  - GOOS=linux   GOARCH=386   ./make.bash --no-clean >/dev/null 2>&1
-  - popd
+  - make prepare
   # cross compile
-  - make -C bin/
+  - make
   # restore detached state
   - git checkout $TRAVIS_BRANCH
   # push when bin/ changes
