@@ -53,7 +53,15 @@ function! hariti#bundler#update(config, datalist) abort
 endfunction
 
 function! hariti#bundler#uninstall(config, datalist) abort
-    throw "Not yet implemented."
+    if has('win16') || has('win32') || has('win95') || has('win64')
+        let cmd= 'RMDIR /S /Q "%s"'
+    else
+        let cmd= 'rm -rf "%s"'
+    endif
+
+    for data in a:datalist
+        call system(printf(cmd, data.path))
+    endfor
 endfunction
 
 function! hariti#bundler#get() abort
