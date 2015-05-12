@@ -39,10 +39,20 @@ function! hariti#util#unify_separator(path) abort
     return substitute(a:path, '[\\/]\+', '/', 'g')
 endfunction
 
+function! hariti#util#has(list, expr) abort
+    for X in a:list
+        if eval(substitute(a:expr, '\<v:val\>', string(X), 'g'))
+            return 1
+        endif
+    endfor
+    return 0
+endfunction
+
 function! hariti#util#get() abort
     return {
     \   'uniq': function('hariti#util#uniq'),
     \   'unify_separator': function('hariti#util#unify_separator'),
+    \   'has': function('hariti#util#has'),
     \}
 endfunction
 

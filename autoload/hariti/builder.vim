@@ -223,6 +223,32 @@ function! hariti#builder#bundle_update(config) abort
     endtry
 endfunction
 
+function! hariti#builder#bundle_clean(config) abort
+    echomsg 'hariti: Cleaning bundles...'
+    try
+        let [ext_rtp, _]= s:parse(a:config)
+        let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url")')
+        let targets= []
+
+        for dir in filter(split(globpath(a:config.bundle_directory, '*'), "\n"), 'isdirectory(v:val)')
+            let dir= s:util.unify_separator(dir . '/')
+            let expr= printf('v:val.path ==# ''%s''', dir)
+            if !s:util.has(bundles, expr)
+                let targets+= [{
+                \   'path': dir,
+                \}]
+            endif
+        endfor
+
+        call s:bundler.uninstall(a:config, targets)
+    catch
+        echohl Error
+        echomsg v:throwpoint
+        echomsg v:exception
+        echohl None
+    endtry
+endfunction
+
 function! s:parse(config)
     if !filereadable(a:config.source_filename)
         throw printf("hariti: No such file `%s'", a:config.source_filename)
@@ -390,7 +416,7 @@ endfunction
 function! s:make_path(config, repository)
     let tail= a:repository.Identifier[-1]
 
-    return s:util.unify_separator(join([a:config.bundle_directory, tail], '/'))
+    return s:util.unify_separator(join([a:config.bundle_directory, tail . '/'], '/'))
 endfunction
 
 let &cpo= s:save_cpo

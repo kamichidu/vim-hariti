@@ -59,8 +59,16 @@ function! hariti#bundler#uninstall(config, datalist) abort
         let cmd= 'rm -rf "%s"'
     endif
 
+    echomsg printf('hariti: Start %d bundles...', len(a:datalist))
     for data in a:datalist
-        call system(printf(cmd, data.path))
+        echomsg printf('hariti: Uninstall %s', matchstr(data.path, '[^/]\+\ze/$'))
+        let output= system(printf(cmd, data.path))
+        if v:shell_error != 0
+            echohl Error
+            echomsg printf('hariti: Error, cannot uninstall "%s"', data.path)
+            echomsg output
+            echohl None
+        endif
     endfor
 endfunction
 

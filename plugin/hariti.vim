@@ -75,5 +75,9 @@ command!
 \   HaritiUpdate
 \   call hariti#builder#bundle_update(g:hariti_config)
 
+command!
+\   HaritiClean
+\   call hariti#builder#bundle_clean(g:hariti_config)
+
 let &cpo= s:save_cpo
 unlet s:save_cpo
