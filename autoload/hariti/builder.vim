@@ -196,6 +196,8 @@ function! hariti#builder#bundle_install(config) abort
         let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url") && !isdirectory(v:val.path)')
 
         call hariti#builder#download(a:config, bundles)
+        call hariti#builder#run_script(a:config, bundles)
+        call hariti#builder#helptags(a:config, bundles)
     catch
         echohl Error
         echomsg v:throwpoint
@@ -211,6 +213,8 @@ function! hariti#builder#bundle_update(config) abort
         let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url") && isdirectory(v:val.path)')
 
         call s:bundler.update(a:config, bundles)
+        call hariti#builder#run_script(a:config, bundles)
+        call hariti#builder#helptags(a:config, bundles)
     catch
         echohl Error
         echomsg v:throwpoint
