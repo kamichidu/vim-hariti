@@ -139,9 +139,9 @@ endfunction
 
 function! hariti#builder#run_script(config, rtp) abort
     let bundles= filter(copy(a:rtp), 'has_key(v:val, "build")')
-    let script= []
 
     for bundle in bundles
+        let script= []
         if has('win16') || has('win32') || has('win64') || has('win95')
             let script+= get(bundle.build, 'windows', [])
         elseif has('mac')
