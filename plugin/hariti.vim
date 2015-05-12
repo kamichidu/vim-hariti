@@ -68,6 +68,10 @@ command!
 \   call hariti#builder#docs(g:hariti_config)
 
 command!
+\   HaritiInstall
+\   call hariti#builder#bundle_install(g:hariti_config)
+
+command!
 \   HaritiUpdate
 \   call hariti#builder#bundle_update(g:hariti_config)
 

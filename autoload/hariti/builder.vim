@@ -189,6 +189,21 @@ function! hariti#builder#helptags(config, rtp) abort
     endfor
 endfunction
 
+function! hariti#builder#bundle_install(config) abort
+    echomsg 'hariti: Installing bundles...'
+    try
+        let [ext_rtp, _]= s:parse(a:config)
+        let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url") && !isdirectory(v:val.path)')
+
+        call hariti#builder#download(a:config, bundles)
+    catch
+        echohl Error
+        echomsg v:throwpoint
+        echomsg v:exception
+        echohl None
+    endtry
+endfunction
+
 function! hariti#builder#bundle_update(config) abort
     echomsg 'hariti: Updating bundles...'
     try
