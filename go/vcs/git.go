@@ -54,6 +54,7 @@ func (self *Git) Update(_ string, path string) error {
 	}
 
 	cmd = exec.Command("git", "submodule", "update", "--init", "--recursive")
+	cmd.Dir = path
 	cmd.Stderr = &stderr
 	err = cmd.Run()
 	if err != nil {
