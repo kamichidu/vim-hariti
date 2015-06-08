@@ -89,7 +89,7 @@ function! hariti#builder#original_runtimepath(config)
         let paths= readfile(backup_filename)
     endif
 
-    return map(copy(paths), "{'path': v:val}")
+    return map(copy(paths), "{'path': s:util.unify_separator(v:val . '/')}")
 endfunction
 
 function! hariti#builder#append_after_directory(rtp)
@@ -133,7 +133,7 @@ endfunction
 
 function! hariti#builder#merge_runtimepath(origin, ext)
     " find appendable pos
-    let pos= index(map(copy(a:origin), 'v:val.path'), $VIMRUNTIME)
+    let pos= index(map(copy(a:origin), 'v:val.path'), s:util.unify_separator($VIMRUNTIME . '/'))
 
     return a:origin[ : max([pos - 1, 0])] + a:ext + a:origin[pos : ]
 endfunction
