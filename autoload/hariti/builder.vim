@@ -22,9 +22,9 @@
 let s:save_cpo= &cpo
 set cpo&vim
 
-let s:plugin_base= expand('<sfile>:p:h:h:h')
 let s:util= hariti#util#get()
 let s:bundler= hariti#bundler#get()
+let s:plugin_base= s:util.unify_separator(expand('<sfile>:p:h:h:h') . '/')
 
 function! hariti#builder#build(config)
     try
