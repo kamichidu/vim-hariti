@@ -185,7 +185,10 @@ function! hariti#builder#helptags(config, rtp) abort
     let bundles= filter(copy(a:rtp), 'isdirectory(v:val.path . "/doc/") && globpath(v:val.path . "/doc/", "**") !=# ""')
 
     for bundle in bundles
-        execute 'helptags' s:util.unify_separator(bundle.path . '/doc/')
+        let doc_path= s:util.unify_separator(bundle.path . '/doc/')
+        if globpath(doc_path, 'tags*') ==# ''
+            execute 'helptags' doc_path
+        endif
     endfor
 endfunction
 
