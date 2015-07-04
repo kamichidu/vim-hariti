@@ -56,11 +56,12 @@ function! hariti#parser#apply_defaults(bundles) abort
     return output
 endfunction
 
-function! hariti#parser#parse() dict abort
+function! hariti#parser#parse(input, ...) abort
+    let input= type(a:input) == type([]) ? join(a:input, "\n") : a:input
     let ctx= s:parse({
-    \   'text': self.__input,
+    \   'text': input,
     \   'pos': 0,
-    \   'length': strlen(self.__input),
+    \   'length': strlen(input),
     \})
     " transform raw to parser output
     let bundles= {'bundles': []}
@@ -333,22 +334,6 @@ endfunction
 
 function! s:ShellScript(in) abort
     return s:match(a:in, '[^\r\n]*')
-endfunction
-
-function! hariti#parser#new(input, ...) abort
-    let parser= {
-    \   'parse': function('hariti#parser#parse'),
-    \}
-
-    if type(a:input) == type('')
-        let parser.__input= a:input
-    elseif type(a:input) == type([])
-        let parser.__input= join(a:input, "\n")
-    else
-        throw 'hariti: Unsupported input type.'
-    endif
-
-    return parser
 endfunction
 
 let &cpo= s:save_cpo

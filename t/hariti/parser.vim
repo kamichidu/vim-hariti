@@ -15,17 +15,15 @@ function! s:suite.__parse__()
     let parse= themis#suite('parse')
 
     function! parse.normaly() abort
-        let parser= hariti#parser#new(readfile('t/fixtures/bundles'))
         let expect= eval(join(readfile('t/fixtures/bundles-output.vim'), ''))
-        let data= parser.parse()
+        let data= hariti#parser#parse(readfile('t/fixtures/bundles'))
 
         call s:assert.equals(data, expect)
     endfunction
 
     function! parse.build_script() abort
-        let parser= hariti#parser#new(readfile('t/fixtures/bundles-build'))
         let expect= eval(join(readfile('t/fixtures/bundles-build-output.vim'), ''))
-        let data= parser.parse()
+        let data= hariti#parser#parse(readfile('t/fixtures/bundles-build'))
 
         call s:assert.equals(data, expect)
     endfunction
