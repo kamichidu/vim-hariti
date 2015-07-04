@@ -22,16 +22,111 @@
 let s:save_cpo= &cpo
 set cpo&vim
 
+let s:util= hariti#util#get()
+
+" utility function for internal/external use
+function! hariti#parser#apply_defaults(bundles) abort
+    if type(a:bundles) != type({})
+        throw printf("hariti: Argument must be a Dictionary.")
+    endif
+
+    let output= {'bundles': []}
+    if !has_key(a:bundles, 'bundles')
+        return output
+    endif
+    for bundle in a:bundles.bundles
+        let b= {}
+        let b.repository= get(bundle, 'repository', '')
+        let b.local= get(bundle, 'local', 0)
+        let b.options= get(bundle, 'options', {})
+        if !b.local
+            let b.options.aliases= get(b.options, 'aliases', [])
+            let b.options.enable_if= get(b.options, 'enable_if', '')
+            let b.options.depends= get(b.options, 'depends', [])
+            let b.options.build= get(b.options, 'build', {})
+            let b.options.build.windows= get(b.options.build, 'windows', []) + get(b.options.build, '*', [])
+            let b.options.build.mac= get(b.options.build, 'mac', []) + get(b.options.build, '*', [])
+            let b.options.build.unix= get(b.options.build, 'unix', []) + get(b.options.build, '*', [])
+        else
+            let b.options.includes= map(get(b.options, 'includes', []), 'v:val.GlobExpr')
+            let b.options.excludes= map(get(b.options, 'excludes', []), 'v:val.GlobExpr')
+        endif
+        let output.bundles+= [b]
+    endfor
+    return output
+endfunction
+
 function! hariti#parser#parse() dict abort
-    let in= {
+    let ctx= s:parse({
     \   'text': self.__input,
     \   'pos': 0,
     \   'length': strlen(self.__input),
-    \}
+    \})
+    " transform raw to parser output
+    let bundles= {'bundles': []}
+    for bundle in ctx.bundle
+        let b= {}
+        let b.local= has_key(bundle, 'filepath')
+        if b.local
+            let b.repository= s:util.unify_separator(expand(bundle.filepath.Path) . '/')
+        else
+            let b.repository= s:make_url(bundle.repository)
+        endif
+        let b.options= {}
+        for option in get(bundle, 'options', [])
+            if has_key(option, 'alias')
+                let b.options.aliases= map(copy(option.alias), 'v:val.Identifier')
+            elseif has_key(option, 'enable_if')
+                " remove ' or "
+                let b.options.enable_if= option.enable_if.String[1 : -2]
+            elseif has_key(option, 'dependency')
+                let b.options.depends= map(option.dependency, 's:make_url(v:val.repository)')
+            elseif has_key(option, 'build')
+                let b.options.build= {}
+                if has_key(option.build, 'windows')
+                    let b.options.build.windows= map(option.build.windows, 'v:val.ShellScript')
+                endif
+                if has_key(option.build, 'mac')
+                    let b.options.build.mac= map(option.build.mac, 'v:val.ShellScript')
+                endif
+                if has_key(option.build, 'unix')
+                    let b.options.build.unix= map(option.build.unix, 'v:val.ShellScript')
+                endif
+                if has_key(option.build, '*')
+                    let b.options.build.windows= get(b.options.build, 'windows', []) + []
+                    let b.options.build.mac= get(b.options.build, 'mac', []) + []
+                    let b.options.build.unix= get(b.options.build, 'unix', []) + []
+                endif
+            elseif has_key(option, 'includes')
+                let b.options.includes= option.includes
+            elseif has_key(option, 'excludes')
+                let b.options.excludes= option.excludes
+            endif
+        endfor
+        let bundles.bundles+= [b]
+    endfor
+    return hariti#parser#apply_defaults(bundles)
+endfunction
 
-    let context= s:file(in)
-    if in.pos < in.length
-        let [lnum, col]= s:where_is(in)
+function! s:make_url(repository)
+    let size= len(a:repository.Identifier)
+    if size == 2
+        return 'https://github.com/' . join(a:repository.Identifier, '/')
+    elseif size == 1
+        return 'https://github.com/vim-scripts/' . join(a:repository.Identifier, '/')
+    else
+        throw "hariti: Couldn't make url."
+    endif
+endfunction
+
+"
+" parsing functions
+"
+
+function! s:parse(in) abort
+    let context= s:file(a:in)
+    if a:in.pos < a:in.length
+        let [lnum, col]= s:where_is(a:in)
         throw printf("hariti: Couldn't consume whole file. (line %d, column %d)", lnum, col)
     endif
     return context
