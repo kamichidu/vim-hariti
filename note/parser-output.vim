@@ -15,7 +15,7 @@
 \           }
 \       },
 \       {
-\           "repository": "absolute/path/to/repository",
+\           "repository": "/absolute/path/to/repository",
 \           "local": 1,
 \           "options": {
 \               "includes": ["globexpr"],
