@@ -100,6 +100,10 @@ function! s:install_go(config, datalist) abort
         let input+= [join([id, 'git', data.url, data.path], "\t")]
         let id+= 1
     endfor
+    if empty(input)
+        echomsg 'hariti: Skipping install'
+        return
+    endif
 
     echomsg printf('hariti: Start %d bundles...', len(a:datalist))
     let output= system(s:go_backend, join(input, "\n"))
