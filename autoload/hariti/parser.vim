@@ -139,7 +139,7 @@ function! s:globpath(path, options) abort
     return paths
 endfunction
 
-function! s:make_url(repository)
+function! s:make_url(repository) abort
     let size= len(a:repository.Identifier)
     if size == 2
         return 'https://github.com/' . join(a:repository.Identifier, '/')

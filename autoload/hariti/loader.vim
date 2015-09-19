@@ -22,7 +22,7 @@
 let s:save_cpo= &cpo
 set cpo&vim
 
-function! hariti#loader#load(config)
+function! hariti#loader#load(config) abort
     if !filereadable(a:config.output_filename) || getftime(a:config.output_filename) < getftime(a:config.source_filename)
         echo 'Building ...'
         call hariti#builder#build(a:config)

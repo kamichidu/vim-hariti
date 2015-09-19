@@ -26,7 +26,7 @@ let s:util= hariti#util#get()
 let s:bundler= hariti#bundler#get()
 let s:plugin_base= s:util.unify_separator(expand('<sfile>:p:h:h:h') . '/')
 
-function! hariti#builder#build(config)
+function! hariti#builder#build(config) abort
     try
         let orig_container= hariti#builder#original_runtimepath(a:config)
         let ext_container= s:parse(a:config)
@@ -47,7 +47,7 @@ function! hariti#builder#build(config)
     endtry
 endfunction
 
-function! hariti#builder#write_tapfile(config, bundles)
+function! hariti#builder#write_tapfile(config, bundles) abort
     if !isdirectory(fnamemodify(a:config.tap_filename, ':h'))
         call mkdir(fnamemodify(a:config.tap_filename, ':h'), 'p')
     endif
@@ -69,7 +69,7 @@ function! hariti#builder#write_tapfile(config, bundles)
     call writefile(script, a:config.tap_filename)
 endfunction
 
-function! hariti#builder#download(config, rtp)
+function! hariti#builder#download(config, rtp) abort
     " only downloadables
     let items= filter(copy(a:rtp), 'has_key(v:val, "url")')
     " not yet downloaded
@@ -78,7 +78,7 @@ function! hariti#builder#download(config, rtp)
     call s:bundler.install(a:config, items)
 endfunction
 
-function! hariti#builder#original_runtimepath(config)
+function! hariti#builder#original_runtimepath(config) abort
     let container= {'bundles': [], 'aliases': {}}
 
     " {backup_directory}/rtp always has original runtimepath
@@ -103,7 +103,7 @@ function! hariti#builder#original_runtimepath(config)
     return container
 endfunction
 
-function! hariti#builder#append_after_directory(bundles)
+function! hariti#builder#append_after_directory(bundles) abort
     let bundles= filter(copy(a:bundles.bundles), 'v:val.local')
     let after_bundles= []
     for bundle in bundles
@@ -121,7 +121,7 @@ function! hariti#builder#append_after_directory(bundles)
     return out
 endfunction
 
-function! hariti#builder#write_script(config, container)
+function! hariti#builder#write_script(config, container) abort
     " force enable hariti
     let script= ['set runtimepath=' . s:plugin_base]
     for bundle in a:container.bundles
@@ -153,7 +153,7 @@ function! s:get_path(config, bundle) abort
     return s:util.unify_separator(path . '/')
 endfunction
 
-function! hariti#builder#merge_runtimepath(orig_container, ext_container)
+function! hariti#builder#merge_runtimepath(orig_container, ext_container) abort
     " find appendable pos
     let container= deepcopy(a:orig_container)
     for [alias, bundles] in items(a:ext_container.aliases)
@@ -282,7 +282,7 @@ function! hariti#builder#bundle_clean(config) abort
     endtry
 endfunction
 
-function! s:parse(config)
+function! s:parse(config) abort
     if !filereadable(a:config.source_filename)
         throw printf("hariti: No such file `%s'", a:config.source_filename)
     endif
@@ -366,7 +366,7 @@ function! s:make_aliases(config, bundles) abort
     return aliases
 endfunction
 
-function! s:make_path(config, repository)
+function! s:make_path(config, repository) abort
     let tail= a:repository.Identifier[-1]
 
     return s:util.unify_separator(join([a:config.bundle_directory, tail . '/'], '/'))
