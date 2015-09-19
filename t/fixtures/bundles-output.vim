@@ -7,8 +7,8 @@
                 'aliases': ['unite-javaimport', 'javaimport'],
                 'enable_if': '',
                 'depends': [
-                    'https://github.com/Shougo/unite.vim',
-                    'https://github.com/vim-scripts/vim-javaclasspath',
+                    'Shougo/unite.vim',
+                    'vim-javaclasspath',
                 ],
                 'build': {
                     'windows': [],
@@ -17,6 +17,7 @@
                 },
             },
         },
+
         {
             'repository': 'https://github.com/kamichidu/vim-javaclasspath',
             'local': 0,
@@ -32,6 +33,7 @@
                 },
             },
         },
+
         {
             'repository': 'https://github.com/kamichidu/vim-javaclasspath',
             'local': 0,
@@ -39,7 +41,7 @@
                 'aliases': [],
                 'enable_if': '',
                 'depends': [
-                    'https://github.com/kamichidu/vim-javaclasspath',
+                    'kamichidu/vim-javaclasspath',
                 ],
                 'build': {
                     'windows': [],
@@ -48,6 +50,7 @@
                 },
             },
         },
+
         {
             'repository': 'https://github.com/kamichidu/vim-milqi',
             'local': 0,
@@ -63,36 +66,86 @@
                 },
             },
         },
+
         {
-            'repository': '/home/user/hoge/fuga/',
+            'repository': 't/dirs/hoge/fuga/aaa_test/',
             'local': 1,
             'options': {
-                'includes': [],
-                'excludes': [],
             },
         },
         {
-            'repository': '/home/user/hoge/fuga/',
+            'repository': 't/dirs/hoge/fuga/bbb_test/',
             'local': 1,
             'options': {
-                'includes': ['**/*/piyo/'],
-                'excludes': [],
             },
         },
         {
-            'repository': '/home/user/hoge/fuga/',
+            'repository': 't/dirs/hoge/fuga/ccc_test/',
             'local': 1,
             'options': {
-                'includes': [],
-                'excludes': ['**/*/piyo/'],
             },
         },
         {
-            'repository': '/home/user/hoge/fuga/',
+            'repository': 't/dirs/hoge/fuga/test_aaa/',
             'local': 1,
             'options': {
-                'includes': ['**/*/piyo/'],
-                'excludes': ['**/*/piyo/'],
+            },
+        },
+        {
+            'repository': 't/dirs/hoge/fuga/test_bbb/',
+            'local': 1,
+            'options': {
+            },
+        },
+        {
+            'repository': 't/dirs/hoge/fuga/test_ccc/',
+            'local': 1,
+            'options': {
+            },
+        },
+
+        {
+            'repository': 't/dirs/hoge/fuga/test_aaa/',
+            'local': 1,
+            'options': {
+            },
+        },
+
+        {
+            'repository': 't/dirs/hoge/fuga/bbb_test/',
+            'local': 1,
+            'options': {
+            },
+        },
+        {
+            'repository': 't/dirs/hoge/fuga/ccc_test/',
+            'local': 1,
+            'options': {
+            },
+        },
+        {
+            'repository': 't/dirs/hoge/fuga/test_bbb/',
+            'local': 1,
+            'options': {
+            },
+        },
+        {
+            'repository': 't/dirs/hoge/fuga/test_ccc/',
+            'local': 1,
+            'options': {
+            },
+        },
+
+        {
+            'repository': 't/dirs/hoge/fuga/aaa_test/',
+            'local': 1,
+            'options': {
+            },
+        },
+        {
+            'repository': 't/dirs/hoge/fuga/test_aaa/',
+            'local': 1,
+            'options': {
             },
         },
     ],

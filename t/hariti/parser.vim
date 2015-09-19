@@ -3,7 +3,7 @@ let s:assert= themis#helper('assert')
 
 function! s:suite.before() abort
     let s:save_home= $HOME
-    let $HOME= '/home/user'
+    let $HOME= 't/dirs'
 endfunction
 
 function! s:suite.after() abort
@@ -31,12 +31,12 @@ endfunction
 
 function! s:suite.apply_defaults()
     let incomplete= {}
-    call s:assert.equals(hariti#parser#apply_defaults(incomplete), {
+    call s:assert.equals(hariti#parser#apply_default_container(incomplete), {
     \   'bundles': [],
     \})
 
     let incomplete= {'bundles': [{}, {'local': 1}]}
-    call s:assert.equals(hariti#parser#apply_defaults(incomplete), {
+    call s:assert.equals(hariti#parser#apply_default_container(incomplete), {
     \   'bundles': [
     \       {
     \           'repository': '',
@@ -56,8 +56,6 @@ function! s:suite.apply_defaults()
     \           'repository': '',
     \           'local': 1,
     \           'options': {
-    \               'includes': [],
-    \               'excludes': [],
     \           },
     \       },
     \   ],

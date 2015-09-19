@@ -28,17 +28,17 @@ let s:plugin_base= s:util.unify_separator(expand('<sfile>:p:h:h:h') . '/')
 
 function! hariti#builder#build(config)
     try
-        let orig_rtp= hariti#builder#original_runtimepath(a:config)
-        let [ext_rtp, aliases]= s:parse(a:config)
-        let new_rtp= hariti#builder#merge_runtimepath(orig_rtp, ext_rtp)
-        let rtp= hariti#builder#append_after_directory(new_rtp)
+        let orig_container= hariti#builder#original_runtimepath(a:config)
+        let ext_container= s:parse(a:config)
+        let container= hariti#builder#merge_runtimepath(orig_container, ext_container)
+        let container= hariti#builder#append_after_directory(container)
 
-        call hariti#builder#write_tapfile(a:config, aliases)
-        call hariti#builder#download(a:config, ext_rtp)
-        call hariti#builder#run_script(a:config, ext_rtp)
-        call hariti#builder#helptags(a:config, ext_rtp)
+        " call hariti#builder#write_tapfile(a:config, bundles)
+        " call hariti#builder#download(a:config, bundles)
+        " call hariti#builder#run_script(a:config, bundles)
+        " call hariti#builder#helptags(a:config, bundles)
 
-        call hariti#builder#write_script(a:config, rtp)
+        call hariti#builder#write_script(a:config, container)
     catch
         echohl Error
         echomsg v:throwpoint
@@ -47,7 +47,7 @@ function! hariti#builder#build(config)
     endtry
 endfunction
 
-function! hariti#builder#write_tapfile(config, aliases)
+function! hariti#builder#write_tapfile(config, bundles)
     if !isdirectory(fnamemodify(a:config.tap_filename, ':h'))
         call mkdir(fnamemodify(a:config.tap_filename, ':h'), 'p')
     endif
@@ -79,6 +79,8 @@ function! hariti#builder#download(config, rtp)
 endfunction
 
 function! hariti#builder#original_runtimepath(config)
+    let container= {'bundles': [], 'aliases': {}}
+
     " {backup_directory}/rtp always has original runtimepath
     " if has('vim_starting') is 1, getting rtp from &runtimepath is faster than reading file
     let backup_filename= s:util.unify_separator(a:config.backup_directory . '/rtp')
@@ -89,53 +91,80 @@ function! hariti#builder#original_runtimepath(config)
         let paths= readfile(backup_filename)
     endif
 
-    return map(copy(paths), "{'path': s:util.unify_separator(v:val . '/')}")
+    for path in paths
+        let container.bundles+= [{
+        \   'repository': s:util.unify_separator(path . '/'),
+        \   'local': 1,
+        \}]
+    endfor
+    let container= hariti#parser#apply_default_container(container)
+    let container.aliases= {}
+
+    return container
 endfunction
 
-function! hariti#builder#append_after_directory(rtp)
-    let dirs= []
-    for info in a:rtp
-        let after_path= s:util.unify_separator(info.path . '/after/')
+function! hariti#builder#append_after_directory(bundles)
+    let bundles= filter(copy(a:bundles.bundles), 'v:val.local')
+    let after_bundles= []
+    for bundle in bundles
+        let after_path= s:util.unify_separator(bundle.repository . '/after/')
         if isdirectory(after_path)
-            let after_bundle= {'path': after_path}
-            if has_key(info, 'enable_if')
-                let after_bundle.enable_if= info.enable_if
-            endif
-            let dirs+= [after_bundle]
+            let after_bundle= deepcopy(bundle)
+            let after_bundle.repository= after_path
+
+            let after_bundles+= [after_bundle]
         endif
     endfor
-    return a:rtp + dirs
+
+    let out= deepcopy(a:bundles)
+    let out.bundles+= after_bundles
+    return out
 endfunction
 
-function! hariti#builder#write_script(config, items)
-    let script= ['set runtimepath=']
-    for item in a:items
-        if has_key(item, 'enable_if')
-            let script+= ['if ' . item.enable_if]
+function! hariti#builder#write_script(config, container)
+    " force enable hariti
+    let script= ['set runtimepath=' . s:plugin_base]
+    for bundle in a:container.bundles
+        if !bundle.local && bundle.options.enable_if !=# ''
+            let script+= ['if ' . bundle.options.enable_if]
         endif
-        let script+= ['set runtimepath+=' . item.path]
-        if has_key(item, 'enable_if')
+        let script+= ['set runtimepath+=' . s:get_path(a:config, bundle)]
+        if !bundle.local && bundle.options.enable_if !=# ''
             let script+= ['endif']
         endif
     endfor
 
-    " force enable hariti
-    if empty(filter(copy(a:items), 'v:val.path ==# s:plugin_base'))
-        let script+= ['set runtimepath+=' . s:plugin_base]
-    endif
-
     if !isdirectory(fnamemodify(a:config.output_filename, ':h'))
         call mkdir(fnamemodify(a:config.output_filename, ':h'))
     endif
-
     call writefile(script, a:config.output_filename)
 endfunction
 
-function! hariti#builder#merge_runtimepath(origin, ext)
-    " find appendable pos
-    let pos= index(map(copy(a:origin), 'v:val.path'), s:util.unify_separator($VIMRUNTIME . '/'))
+function! s:get_path(config, bundle) abort
+    if a:bundle.local
+        return a:bundle.repository
+    endif
 
-    return a:origin[ : max([pos - 1, 0])] + a:ext + a:origin[pos : ]
+    let name= fnamemodify(a:bundle.repository, ':t')
+    if name ==# ''
+        throw printf("hariti: Internal error, got empty dirname from `%s'", a:bundle.repository)
+    endif
+    let path= join([a:config.bundle_directory, name], '/')
+    return s:util.unify_separator(path . '/')
+endfunction
+
+function! hariti#builder#merge_runtimepath(orig_container, ext_container)
+    " find appendable pos
+    let container= deepcopy(a:orig_container)
+    for [alias, bundles] in items(a:ext_container.aliases)
+        let container.aliases[alias]= get(container.aliases, alias, []) + bundles
+    endfor
+
+    let paths= map(filter(copy(container.bundles), 'v:val.local'), 'v:val.repository')
+    let pos= index(paths, s:util.unify_separator($VIMRUNTIME . '/'))
+
+    let container.bundles= container.bundles[ : max([pos - 1, 0])] + a:ext_container.bundles + container.bundles[pos : ]
+    return container
 endfunction
 
 function! hariti#builder#run_script(config, rtp) abort
@@ -259,162 +288,82 @@ function! s:parse(config)
     endif
 
     let input= iconv(join(readfile(a:config.source_filename), "\n"), a:config.source_encoding, &encoding)
-    let parser= hariti#parser#new(input)
-    return s:build_internal(a:config, parser.parse())
+    let container= hariti#parser#parse(input)
+    let container= s:rebuild_with_deps(container)
+    let container.bundles= s:util.uniq(container.bundles)
+    let container.aliases= s:make_aliases(a:config, container)
+    return container
 endfunction
 
-function! s:build_internal(config, context)
-    " transform
-    for bundle in a:context.bundle
-        for option in bundle.options
-            for key in keys(option)
-                if type(option[key]) == type([])
-                    let bundle[key]= get(bundle, key, []) + option[key]
-                elseif type(option[key]) == type({})
-                    let bundle[key]= extend(get(bundle, key, {}), option[key])
-                else
-                    let bundle[key]= option[key]
-                endif
+function! s:rebuild_with_deps(container) abort
+    let container= {'bundles': [], 'aliases': []}
+    for bundle in a:container.bundles
+        if !bundle.local
+            for depend in bundle.options.depends
+                let container.bundles+= [s:find_or_create_bundle(a:container, depend)]
             endfor
-        endfor
-        call remove(bundle, 'options')
-    endfor
-
-    let aliases= s:make_aliases(a:config, a:context)
-    let bundles= []
-    for bundle in a:context.bundle
-        if s:is_bundle(bundle)
-            let bundles+= s:make_bundles(a:config, aliases, bundle)
-        else
-            let bundles+= s:make_local_bundles(a:config, aliases, bundle)
         endif
+        let container.bundles+= [bundle]
     endfor
-    let bundles= s:util.uniq(bundles)
-
-    return [bundles, aliases]
+    return container
 endfunction
 
-function! s:is_bundle(bundle) abort
-    return has_key(a:bundle, 'repository')
-endfunction
-
-function! s:is_local_bundle(bundle) abort
-    return has_key(a:bundle, 'filepath')
-endfunction
-
-function! s:make_bundles(config, aliases, bundle) abort
-    let bundles= []
-    if has_key(a:bundle, 'dependency')
-        for dependency in a:bundle.dependency
-            if has_key(a:aliases, dependency.repository.Identifier[-1])
-                let info= a:aliases[dependency.repository.Identifier[-1]]
-            else
-                let info= [{
-                \   'url': s:make_url(dependency.repository),
-                \   'path': s:make_path(a:config, dependency.repository),
-                \}]
-                if has_key(a:bundle, 'enable_if')
-                    for i in info
-                        let i.enable_if= a:bundle.enable_if
-                    endfor
-                    unlet! i
-                endif
+function! s:find_or_create_bundle(container, query) abort
+    for bundle in a:container.bundles
+        " as is?
+        if bundle.repository ==# a:query
+            return bundle
+        endif
+        " name?
+        if matchstr(bundle.repository, '[^/]\+\ze/\?$') ==# a:query
+            return bundle
+        endif
+        " gh-username and repo?
+        if matchstr(bundle.repository, '[^/]\+/[^/]\+$') ==# a:query
+            return bundle
+        endif
+        if !bundle.local
+            " in alias?
+            if !empty(filter(copy(bundle.options.aliases), 'a:query ==# v:val'))
+                return bundle
             endif
-            let bundles+= info
-        endfor
-    endif
+        endif
+    endfor
 
-    unlet! info
-    let info= {
-    \   'url': s:make_url(a:bundle.repository),
-    \   'path': s:make_path(a:config, a:bundle.repository),
-    \}
-    if has_key(a:bundle, 'enable_if')
-        let info.enable_if= a:bundle.enable_if.String[1 : -2]
+    " url?
+    if a:query =~# '^https\?://'
+        let url= a:query
+    else
+        " assum github repo
+        let elements= split(a:query, '/')
+        if len(elements) == 2
+            let url= join(['https://github.com'] + elements, '/')
+        elseif len(elements) == 1
+            let url= join(['https://github.com/vim-scripts'] + elements, '/')
+        else
+            throw printf("hariti: Couldn't resolve `%s'", a:query)
+        endif
     endif
-    if has_key(a:bundle, 'build')
-        let info.build= {}
-        for platform in keys(a:bundle.build)
-            let info.build[platform]= get(info.build, platform, []) + map(copy(a:bundle.build[platform]), 'v:val.ShellScript')
-        endfor
-    endif
-    let bundles+= [info]
-    return bundles
+    return hariti#parser#apply_default_bundle({'repository': url, 'local': 0})
 endfunction
 
-function! s:make_local_bundles(config, aliases, bundle) abort
-    let path= expand(a:bundle.filepath.Path)
-    if !isdirectory(path)
-        return []
-    endif
-
-    let dirs= split(globpath(path, '*'), "\n")
-    call filter(dirs, 'isdirectory(v:val)')
-    call map(dirs, 's:util.unify_separator(v:val . "/")')
-    if has_key(a:bundle, 'includes')
-        for expr in a:bundle.includes
-            let pat= '^' . substitute(expr.GlobExpr, '\*', '.*', 'g') . '$'
-            " fnamemodify('fuga/hoge/', ':t') => ''
-            " fnamemodify('fuga/hoge/', ':h:t') => 'hoge'
-            call filter(dirs, 'fnamemodify(v:val, ":h:t") =~# pat')
-        endfor
-    endif
-    if has_key(a:bundle, 'excludes')
-        for expr in a:bundle.excludes
-            let pat= '^' . substitute(expr.GlobExpr, '\*', '.*', 'g') . '$'
-            " fnamemodify('fuga/hoge/', ':t') => ''
-            " fnamemodify('fuga/hoge/', ':h:t') => 'hoge'
-            call filter(dirs, 'fnamemodify(v:val, ":h:t") !~# pat')
-        endfor
-    endif
-
-    return map(dirs, "{'path': v:val}")
-endfunction
-
-function! s:make_aliases(config, context) abort
-    let bundles= filter(copy(a:context.bundle), 's:is_bundle(v:val)')
+function! s:make_aliases(config, bundles) abort
+    let bundles= filter(copy(a:bundles.bundles), '!v:val.local')
     let aliases= {}
-    " url, name, alias => data
+    " url, name, alias => [bundle]
     for bundle in bundles
-        let data= {
-        \   'url': s:make_url(bundle.repository),
-        \   'path': s:make_path(a:config, bundle.repository),
-        \}
-        if has_key(bundle, 'enable_if')
-            let data.enable_if= bundle.enable_if.String[1 : -2]
-        endif
-        if has_key(bundle, 'build')
-            let data.build= {}
-            for platform in keys(bundle.build)
-                let data.build[platform]= get(data.build, platform, []) + map(copy(bundle.build[platform]), 'v:val.ShellScript')
-            endfor
-        endif
-
         " url => data
-        let url= s:make_url(bundle.repository)
-        let aliases[url]= get(aliases, url, []) + [data]
+        let url= bundle.repository
+        let aliases[url]= get(aliases, url, []) + [bundle]
         " name => data
-        let name= bundle.repository.Identifier[-1]
-        let aliases[name]= get(aliases, name, []) + [data]
+        let name= fnamemodify(bundle.repository, ':t')
+        let aliases[name]= get(aliases, name, []) + [bundle]
         " alias => data
-        if has_key(bundle, 'alias')
-            for alias in bundle.alias
-                let aliases[alias.Identifier]= get(aliases, alias.Identifier, []) + [data]
-            endfor
-        endif
+        for alias in bundle.options.aliases
+            let aliases[alias]= get(aliases, alias, []) + [bundle]
+        endfor
     endfor
     return aliases
-endfunction
-
-function! s:make_url(repository)
-    let size= len(a:repository.Identifier)
-    if size == 2
-        return 'https://github.com/' . join(a:repository.Identifier, '/')
-    elseif size == 1
-        return 'https://github.com/vim-scripts/' . join(a:repository.Identifier, '/')
-    else
-        throw "hariti: Couldn't make url."
-    endif
 endfunction
 
 function! s:make_path(config, repository)

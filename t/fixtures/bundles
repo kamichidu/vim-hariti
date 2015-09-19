@@ -19,22 +19,25 @@ use kamichidu/vim-javaclasspath
 use kamichidu/vim-milqi
     as milqi
 
-use local ~/hoge/fuga/
+use local $HOME/hoge/fuga/
 
-use local ~/hoge/fuga
+use local $HOME/hoge/fuga
     includes (
-        **/*/piyo/
-    )
-
-use local ~/hoge/fuga
-    excludes (
-        **/*/piyo/
-    )
-
-use local ~/hoge/fuga
-    includes (
-        **/*/piyo/
+        test_aaa
     )
     excludes (
-        **/*/piyo/
+        *
+    )
+
+use local $HOME/hoge/fuga
+    excludes (
+        *aaa*
+    )
+
+use local $HOME/hoge/fuga
+    includes (
+        *aaa*
+    )
+    excludes (
+        *
     )

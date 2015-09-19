@@ -25,35 +25,37 @@ set cpo&vim
 let s:util= hariti#util#get()
 
 " utility function for internal/external use
-function! hariti#parser#apply_defaults(bundles) abort
-    if type(a:bundles) != type({})
+function! hariti#parser#apply_default_container(container) abort
+    if type(a:container) != type({})
         throw printf("hariti: Argument must be a Dictionary.")
     endif
 
     let output= {'bundles': []}
-    if !has_key(a:bundles, 'bundles')
+    if !has_key(a:container, 'bundles')
         return output
     endif
-    for bundle in a:bundles.bundles
-        let b= {}
-        let b.repository= get(bundle, 'repository', '')
-        let b.local= get(bundle, 'local', 0)
-        let b.options= get(bundle, 'options', {})
-        if !b.local
-            let b.options.aliases= get(b.options, 'aliases', [])
-            let b.options.enable_if= get(b.options, 'enable_if', '')
-            let b.options.depends= get(b.options, 'depends', [])
-            let b.options.build= get(b.options, 'build', {})
-            let b.options.build.windows= get(b.options.build, 'windows', []) + get(b.options.build, '*', [])
-            let b.options.build.mac= get(b.options.build, 'mac', []) + get(b.options.build, '*', [])
-            let b.options.build.unix= get(b.options.build, 'unix', []) + get(b.options.build, '*', [])
-        else
-            let b.options.includes= map(get(b.options, 'includes', []), 'v:val.GlobExpr')
-            let b.options.excludes= map(get(b.options, 'excludes', []), 'v:val.GlobExpr')
-        endif
-        let output.bundles+= [b]
+    for bundle in a:container.bundles
+        let output.bundles+= [hariti#parser#apply_default_bundle(bundle)]
     endfor
     return output
+endfunction
+
+" utility function for internal/external use
+function! hariti#parser#apply_default_bundle(bundle) abort
+    let b= {}
+    let b.repository= get(a:bundle, 'repository', '')
+    let b.local= get(a:bundle, 'local', 0)
+    let b.options= get(a:bundle, 'options', {})
+    if !b.local
+        let b.options.aliases= get(b.options, 'aliases', [])
+        let b.options.enable_if= get(b.options, 'enable_if', '')
+        let b.options.depends= get(b.options, 'depends', [])
+        let b.options.build= get(b.options, 'build', {})
+        let b.options.build.windows= get(b.options.build, 'windows', []) + get(b.options.build, '*', [])
+        let b.options.build.mac= get(b.options.build, 'mac', []) + get(b.options.build, '*', [])
+        let b.options.build.unix= get(b.options.build, 'unix', []) + get(b.options.build, '*', [])
+    endif
+    return b
 endfunction
 
 function! hariti#parser#parse(input, ...) abort
@@ -64,49 +66,77 @@ function! hariti#parser#parse(input, ...) abort
     \   'length': strlen(input),
     \})
     " transform raw to parser output
-    let bundles= {'bundles': []}
+    let container= {'bundles': []}
     for bundle in ctx.bundle
-        let b= {}
-        let b.local= has_key(bundle, 'filepath')
-        if b.local
-            let b.repository= s:util.unify_separator(expand(bundle.filepath.Path) . '/')
+        if has_key(bundle, 'filepath')
+            let path= s:util.unify_separator(expand(bundle.filepath.Path) . '/')
+            for repository in s:globpath(path, get(bundle, 'options', []))
+                let b= {}
+                let b.repository= repository
+                let b.local= 1
+                let container.bundles+= [b]
+            endfor
         else
+            let b= {}
             let b.repository= s:make_url(bundle.repository)
+            let b.local= 0
+            let b.options= {}
+            for option in get(bundle, 'options', [])
+                if has_key(option, 'alias')
+                    let b.options.aliases= map(copy(option.alias), 'v:val.Identifier')
+                elseif has_key(option, 'enable_if')
+                    " remove ' or "
+                    let b.options.enable_if= option.enable_if.String[1 : -2]
+                elseif has_key(option, 'dependency')
+                    let b.options.depends= map(option.dependency, 'join(v:val.repository.Identifier, "/")')
+                elseif has_key(option, 'build')
+                    let b.options.build= {}
+                    if has_key(option.build, 'windows')
+                        let b.options.build.windows= map(option.build.windows, 'v:val.ShellScript')
+                    endif
+                    if has_key(option.build, 'mac')
+                        let b.options.build.mac= map(option.build.mac, 'v:val.ShellScript')
+                    endif
+                    if has_key(option.build, 'unix')
+                        let b.options.build.unix= map(option.build.unix, 'v:val.ShellScript')
+                    endif
+                    if has_key(option.build, '*')
+                        let b.options.build.windows= get(b.options.build, 'windows', []) + []
+                        let b.options.build.mac= get(b.options.build, 'mac', []) + []
+                        let b.options.build.unix= get(b.options.build, 'unix', []) + []
+                    endif
+                endif
+            endfor
+            let container.bundles+= [b]
         endif
-        let b.options= {}
-        for option in get(bundle, 'options', [])
-            if has_key(option, 'alias')
-                let b.options.aliases= map(copy(option.alias), 'v:val.Identifier')
-            elseif has_key(option, 'enable_if')
-                " remove ' or "
-                let b.options.enable_if= option.enable_if.String[1 : -2]
-            elseif has_key(option, 'dependency')
-                let b.options.depends= map(option.dependency, 's:make_url(v:val.repository)')
-            elseif has_key(option, 'build')
-                let b.options.build= {}
-                if has_key(option.build, 'windows')
-                    let b.options.build.windows= map(option.build.windows, 'v:val.ShellScript')
-                endif
-                if has_key(option.build, 'mac')
-                    let b.options.build.mac= map(option.build.mac, 'v:val.ShellScript')
-                endif
-                if has_key(option.build, 'unix')
-                    let b.options.build.unix= map(option.build.unix, 'v:val.ShellScript')
-                endif
-                if has_key(option.build, '*')
-                    let b.options.build.windows= get(b.options.build, 'windows', []) + []
-                    let b.options.build.mac= get(b.options.build, 'mac', []) + []
-                    let b.options.build.unix= get(b.options.build, 'unix', []) + []
-                endif
-            elseif has_key(option, 'includes')
-                let b.options.includes= option.includes
-            elseif has_key(option, 'excludes')
-                let b.options.excludes= option.excludes
-            endif
-        endfor
-        let bundles.bundles+= [b]
     endfor
-    return hariti#parser#apply_defaults(bundles)
+    return hariti#parser#apply_default_container(container)
+endfunction
+
+function! s:globpath(path, options) abort
+    let includes= []
+    let excludes= []
+    let expr2regex= {'**': '.*', '*': '[^/]*', '?': '[^/]'}
+    for option in a:options
+        if has_key(option, 'includes')
+            " globexpr => regex
+            let includes+= map(copy(option.includes), '"^" . substitute(v:val.GlobExpr, "\\%(\\*\\{1,2}\\|?\\)", "\\=expr2regex[submatch(0)]", "g") . "$"')
+        elseif has_key(option, 'excludes')
+            " globexpr => regex
+            let excludes+= map(copy(option.excludes), '"^" . substitute(v:val.GlobExpr, "\\%(\\*\\{1,2}\\|?\\)", "\\=expr2regex[submatch(0)]", "g") . "$"')
+        endif
+    endfor
+
+    let paths= []
+    for path in filter(split(globpath(a:path, '*'), "\n"), 'isdirectory(v:val)')
+        let name= fnamemodify(path, ':t')
+        if empty(filter(copy(excludes), 'name =~# v:val'))
+            let paths+= [s:util.unify_separator(path . '/')]
+        elseif !empty(filter(copy(includes), 'name =~# v:val'))
+            let paths+= [s:util.unify_separator(path . '/')]
+        endif
+    endfor
+    return paths
 endfunction
 
 function! s:make_url(repository)
