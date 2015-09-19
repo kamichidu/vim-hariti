@@ -283,11 +283,12 @@ function! hariti#builder#bundle_clean(config) abort
 endfunction
 
 function! s:parse(config) abort
-    if !filereadable(a:config.source_filename)
-        throw printf("hariti: No such file `%s'", a:config.source_filename)
+    if filereadable(a:config.source_filename)
+        let input= iconv(join(readfile(a:config.source_filename), "\n"), a:config.source_encoding, &encoding)
+    else
+        let input= ''
     endif
 
-    let input= iconv(join(readfile(a:config.source_filename), "\n"), a:config.source_encoding, &encoding)
     let container= hariti#parser#parse(input)
     let container= s:rebuild_with_deps(container)
     let container.bundles= s:util.uniq(container.bundles)
