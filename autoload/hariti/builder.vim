@@ -31,12 +31,13 @@ function! hariti#builder#build(config) abort
         let orig_container= hariti#builder#original_runtimepath(a:config)
         let ext_container= s:parse(a:config)
         let container= hariti#builder#merge_runtimepath(orig_container, ext_container)
-        let container= hariti#builder#append_after_directory(container)
 
-        " call hariti#builder#write_tapfile(a:config, bundles)
-        " call hariti#builder#download(a:config, bundles)
-        " call hariti#builder#run_script(a:config, bundles)
-        " call hariti#builder#helptags(a:config, bundles)
+        call hariti#builder#write_tapfile(a:config, container)
+        call hariti#builder#download(a:config, container)
+        call hariti#builder#run_script(a:config, container)
+        call hariti#builder#helptags(a:config, container)
+
+        let container= hariti#builder#append_after_directory(a:config, container)
 
         call hariti#builder#write_script(a:config, container)
     catch
@@ -47,20 +48,20 @@ function! hariti#builder#build(config) abort
     endtry
 endfunction
 
-function! hariti#builder#write_tapfile(config, bundles) abort
+function! hariti#builder#write_tapfile(config, container) abort
     if !isdirectory(fnamemodify(a:config.tap_filename, ':h'))
         call mkdir(fnamemodify(a:config.tap_filename, ':h'), 'p')
     endif
 
     let script= []
-    for key in keys(a:aliases)
+    for key in keys(a:container.aliases)
         let expr= []
-        for data in a:aliases[key]
+        for bundle in a:container.aliases[key]
             let condition= []
-            if has_key(data, 'enable_if')
-                let condition+= [data.enable_if]
+            if bundle.options.enable_if !=# ''
+                let condition+= [bundle.options.enable_if]
             endif
-            let condition+= [printf('isdirectory(%s)', string(data.path))]
+            let condition+= [printf('isdirectory(%s)', string(s:to_path(a:config, bundle)))]
             let expr+= ['(' . join(condition, ' && ') . ')']
         endfor
         let script+= [key . "\t" . join(expr, ' || ')]
@@ -69,13 +70,14 @@ function! hariti#builder#write_tapfile(config, bundles) abort
     call writefile(script, a:config.tap_filename)
 endfunction
 
-function! hariti#builder#download(config, rtp) abort
-    " only downloadables
-    let items= filter(copy(a:rtp), 'has_key(v:val, "url")')
-    " not yet downloaded
-    let items= filter(copy(items), '!isdirectory(v:val.path)')
+function! hariti#builder#download(config, container) abort
+    let bundles= filter(copy(a:container.bundles), '!v:val.local')
+    let datalist= map(copy(bundles), "{
+    \   'url': v:val.repository,
+    \   'path': s:to_path(a:config, v:val),
+    \}")
 
-    call s:bundler.install(a:config, items)
+    call s:bundler.install(a:config, datalist)
 endfunction
 
 function! hariti#builder#original_runtimepath(config) abort
@@ -103,22 +105,22 @@ function! hariti#builder#original_runtimepath(config) abort
     return container
 endfunction
 
-function! hariti#builder#append_after_directory(bundles) abort
-    let bundles= filter(copy(a:bundles.bundles), 'v:val.local')
+function! hariti#builder#append_after_directory(config, container) abort
     let after_bundles= []
-    for bundle in bundles
-        let after_path= s:util.unify_separator(bundle.repository . '/after/')
+    for bundle in a:container.bundles
+        let after_path= s:util.unify_separator(s:to_path(a:config, bundle) . '/after/')
         if isdirectory(after_path)
             let after_bundle= deepcopy(bundle)
             let after_bundle.repository= after_path
+            let after_bundle.local= 1
 
             let after_bundles+= [after_bundle]
         endif
     endfor
 
-    let out= deepcopy(a:bundles)
-    let out.bundles+= after_bundles
-    return out
+    let container= deepcopy(a:container)
+    let container.bundles+= after_bundles
+    return container
 endfunction
 
 function! hariti#builder#write_script(config, container) abort
@@ -167,25 +169,26 @@ function! hariti#builder#merge_runtimepath(orig_container, ext_container) abort
     return container
 endfunction
 
-function! hariti#builder#run_script(config, rtp) abort
-    let bundles= filter(copy(a:rtp), 'has_key(v:val, "build")')
+function! hariti#builder#run_script(config, container) abort
+    let bundles= filter(copy(a:container.bundles), '!v:val.local')
 
     for bundle in bundles
-        let script= []
         if has('win16') || has('win32') || has('win64') || has('win95')
-            let script+= get(bundle.build, 'windows', [])
+            let script= bundle.options.build.windows
         elseif has('mac')
-            let script+= get(bundle.build, 'mac', [])
+            let script= bundle.options.build.mac
         else
-            let script+= get(bundle.build, 'unix', [])
+            let script= bundle.options.build.unix
         endif
-        let script+= get(bundle.build, '*', [])
+        if empty(script)
+            continue
+        endif
 
         let cwd= getcwd()
         try
-            execute 'lcd' bundle.path
+            execute 'lcd' s:to_path(a:config, bundle)
 
-            echomsg printf('hariti: Executing user build script for %s', matchstr(bundle.path, '/\zs[^/]\+$'))
+            echomsg printf('hariti: Executing user build script for %s', fnamemodify(bundle.repository, ':t'))
             for cmd in script
                 for output in split(system(cmd), "\n")
                     echomsg output
@@ -199,9 +202,9 @@ endfunction
 
 function! hariti#builder#docs(config) abort
     try
-        let [ext_rtp, _]= s:parse(a:config)
+        let container= s:parse(a:config)
 
-        call hariti#builder#helptags(a:config, ext_rtp)
+        call hariti#builder#helptags(a:config, container)
     catch
         echohl Error
         echomsg v:throwpoint
@@ -210,44 +213,44 @@ function! hariti#builder#docs(config) abort
     endtry
 endfunction
 
-function! hariti#builder#helptags(config, rtp) abort
+function! hariti#builder#helptags(config, container) abort
     echomsg 'hariti: Generating helptags...'
-    let bundles= filter(copy(a:rtp), 'isdirectory(v:val.path . "/doc/") && globpath(v:val.path . "/doc/", "**") !=# ""')
+    let bundles= filter(copy(a:container.bundles), '!v:val.local')
 
     for bundle in bundles
-        let doc_path= s:util.unify_separator(bundle.path . '/doc/')
-        if globpath(doc_path, 'tags*') ==# ''
+        let doc_path= s:util.unify_separator(s:to_path(a:config, bundle) . '/doc/')
+        if isdirectory(doc_path) && globpath(doc_path, 'tags*') ==# ''
             execute 'helptags' doc_path
         endif
     endfor
 endfunction
 
 function! hariti#builder#bundle_install(config) abort
-    echomsg 'hariti: Installing bundles...'
-    try
-        let [ext_rtp, _]= s:parse(a:config)
-        let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url") && !isdirectory(v:val.path)')
-
-        call hariti#builder#download(a:config, bundles)
-        call hariti#builder#run_script(a:config, bundles)
-        call hariti#builder#helptags(a:config, bundles)
-    catch
-        echohl Error
-        echomsg v:throwpoint
-        echomsg v:exception
-        echohl None
-    endtry
+    call hariti#builder#build(a:config)
 endfunction
 
 function! hariti#builder#bundle_update(config) abort
     echomsg 'hariti: Updating bundles...'
     try
-        let [ext_rtp, _]= s:parse(a:config)
-        let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url") && isdirectory(v:val.path)')
+        let container= s:parse(a:config)
+        let bundles= filter(copy(container.bundles), '!v:val.local')
+        let datalist= map(copy(bundles), "{
+        \   'url': v:val.repository,
+        \   'path': s:to_path(a:config, v:val),
+        \}")
 
-        call s:bundler.update(a:config, bundles)
-        call hariti#builder#run_script(a:config, bundles)
-        call hariti#builder#helptags(a:config, bundles)
+        call s:bundler.update(a:config, datalist)
+
+        let orig_container= hariti#builder#original_runtimepath(a:config)
+        let container= hariti#builder#merge_runtimepath(orig_container, container)
+
+        call hariti#builder#write_tapfile(a:config, container)
+        call hariti#builder#run_script(a:config, container)
+        call hariti#builder#helptags(a:config, container)
+
+        let container= hariti#builder#append_after_directory(a:config, container)
+
+        call hariti#builder#write_script(a:config, container)
     catch
         echohl Error
         echomsg v:throwpoint
@@ -259,21 +262,36 @@ endfunction
 function! hariti#builder#bundle_clean(config) abort
     echomsg 'hariti: Cleaning bundles...'
     try
-        let [ext_rtp, _]= s:parse(a:config)
-        let bundles= filter(copy(ext_rtp), 'has_key(v:val, "url")')
-        let targets= []
+        let container= s:parse(a:config)
+        let bundles= filter(copy(container.bundles), '!v:val.local')
 
+        let targets= []
         for dir in filter(split(globpath(a:config.bundle_directory, '*'), "\n"), 'isdirectory(v:val)')
             let dir= s:util.unify_separator(dir . '/')
-            let expr= printf('v:val.path ==# ''%s''', dir)
-            if !s:util.has(bundles, expr)
+            let found= 0
+            for bundle in bundles
+                if dir ==# s:to_path(a:config, bundle)
+                    let found= 1
+                    break
+                endif
+            endfor
+            if !found
                 let targets+= [{
                 \   'path': dir,
                 \}]
             endif
         endfor
+        if empty(targets)
+            return
+        endif
 
-        call s:bundler.uninstall(a:config, targets)
+        for target in targets
+            echomsg target.path
+        endfor
+        let ret= confirm('These directories will be removed. Okay?', "&Yes\n&No\n", 2)
+        if ret == 1
+            call s:bundler.uninstall(a:config, targets)
+        endif
     catch
         echohl Error
         echomsg v:throwpoint
@@ -290,6 +308,7 @@ function! s:parse(config) abort
     endif
 
     let container= hariti#parser#parse(input)
+    " make internal data structure from parser output
     let container= s:rebuild_with_deps(container)
     let container.bundles= s:util.uniq(container.bundles)
     let container.aliases= s:make_aliases(a:config, container)
@@ -297,7 +316,7 @@ function! s:parse(config) abort
 endfunction
 
 function! s:rebuild_with_deps(container) abort
-    let container= {'bundles': [], 'aliases': []}
+    let container= {'bundles': []}
     for bundle in a:container.bundles
         if !bundle.local
             for depend in bundle.options.depends
@@ -348,8 +367,8 @@ function! s:find_or_create_bundle(container, query) abort
     return hariti#parser#apply_default_bundle({'repository': url, 'local': 0})
 endfunction
 
-function! s:make_aliases(config, bundles) abort
-    let bundles= filter(copy(a:bundles.bundles), '!v:val.local')
+function! s:make_aliases(config, container) abort
+    let bundles= filter(copy(a:container.bundles), '!v:val.local')
     let aliases= {}
     " url, name, alias => [bundle]
     for bundle in bundles
@@ -367,10 +386,13 @@ function! s:make_aliases(config, bundles) abort
     return aliases
 endfunction
 
-function! s:make_path(config, repository) abort
-    let tail= a:repository.Identifier[-1]
+function! s:to_path(config, bundle) abort
+    if a:bundle.local
+        return a:bundle.repository
+    endif
 
-    return s:util.unify_separator(join([a:config.bundle_directory, tail . '/'], '/'))
+    let name= fnamemodify(a:bundle.repository, ':t')
+    return s:util.unify_separator(a:config.bundle_directory . '/' . name . '/')
 endfunction
 
 let &cpo= s:save_cpo
