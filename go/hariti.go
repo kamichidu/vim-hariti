@@ -27,7 +27,7 @@ type Vcs struct {
 var logger *log.Logger = func() *log.Logger {
 	logflags := log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
 
-    if file, err := os.OpenFile(path.Join(path.Dir(os.Args[0]), "../logs/hariti.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
+	if file, err := os.OpenFile(path.Join(path.Dir(os.Args[0]), "../logs/hariti.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
 		return log.New(file, "", logflags)
 	} else {
 		return log.New(os.Stderr, "", logflags)
@@ -41,12 +41,12 @@ func parseLine(line []byte) (*Vcs, *Bundle, error) {
 	}
 	id, vcsName, url, path := items[0], items[1], items[2], items[3]
 
-    logger.Printf("Given type is `%s'\n", vcsName)
+	logger.Printf("Given type is `%s'\n", vcsName)
 
 	var vcs *Vcs
 	switch vcsName {
 	case "git":
-        git := git.NewGitWithLogger(logger)
+		git := git.NewGitWithLogger(logger)
 		vcs = &Vcs{
 			Install: func(bundle *Bundle) error {
 				return git.Install(bundle.Url, bundle.Path)
