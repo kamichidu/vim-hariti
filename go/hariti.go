@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./vcs"
+	"./vcs/git"
 	"bufio"
 	"errors"
 	"fmt"
