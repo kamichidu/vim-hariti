@@ -8,7 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -27,7 +27,7 @@ type Vcs struct {
 var logger *log.Logger = func() *log.Logger {
 	logflags := log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile
 
-	if file, err := os.OpenFile(path.Join(path.Dir(os.Args[0]), "../logs/hariti.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
+	if file, err := os.OpenFile(filepath.Join(filepath.Dir(os.Args[0]), "../logs/hariti.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
 		return log.New(file, "", logflags)
 	} else {
 		return log.New(os.Stderr, "", logflags)
