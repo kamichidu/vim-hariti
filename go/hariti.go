@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -69,16 +68,9 @@ func isDirectory(path string) bool {
 func main() {
 	var wg sync.WaitGroup
 
-	in := bufio.NewReader(os.Stdin)
-	for {
-		bytes, _, err := in.ReadLine()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			log.Panic(err)
-		}
-
-		vcs, bundle, err := parseLine(bytes)
+	in := bufio.NewScanner(os.Stdin)
+	for in.Scan() {
+		vcs, bundle, err := parseLine(in.Bytes())
 		if err != nil {
 			log.Panic(err)
 		}
