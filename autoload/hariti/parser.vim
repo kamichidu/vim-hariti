@@ -46,15 +46,13 @@ function! hariti#parser#apply_default_bundle(bundle) abort
     let b.repository= get(a:bundle, 'repository', '')
     let b.local= get(a:bundle, 'local', 0)
     let b.options= get(a:bundle, 'options', {})
-    if !b.local
-        let b.options.aliases= get(b.options, 'aliases', [])
-        let b.options.enable_if= get(b.options, 'enable_if', '')
-        let b.options.depends= get(b.options, 'depends', [])
-        let b.options.build= get(b.options, 'build', {})
-        let b.options.build.windows= get(b.options.build, 'windows', []) + get(b.options.build, '*', [])
-        let b.options.build.mac= get(b.options.build, 'mac', []) + get(b.options.build, '*', [])
-        let b.options.build.unix= get(b.options.build, 'unix', []) + get(b.options.build, '*', [])
-    endif
+    let b.options.aliases= get(b.options, 'aliases', [])
+    let b.options.enable_if= get(b.options, 'enable_if', '')
+    let b.options.depends= get(b.options, 'depends', [])
+    let b.options.build= get(b.options, 'build', {})
+    let b.options.build.windows= get(b.options.build, 'windows', []) + get(b.options.build, '*', [])
+    let b.options.build.mac= get(b.options.build, 'mac', []) + get(b.options.build, '*', [])
+    let b.options.build.unix= get(b.options.build, 'unix', []) + get(b.options.build, '*', [])
     return b
 endfunction
 

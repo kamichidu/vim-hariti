@@ -113,6 +113,7 @@ function! hariti#builder#append_after_directory(config, container) abort
             let after_bundle= deepcopy(bundle)
             let after_bundle.repository= after_path
             let after_bundle.local= 1
+            let after_bundle.options.enable_if= bundle.options.enable_if
 
             let after_bundles+= [after_bundle]
         endif
@@ -127,11 +128,11 @@ function! hariti#builder#write_script(config, container) abort
     " force enable hariti
     let script= ['set runtimepath=' . s:plugin_base]
     for bundle in a:container.bundles
-        if !bundle.local && bundle.options.enable_if !=# ''
+        if bundle.options.enable_if !=# ''
             let script+= ['if ' . bundle.options.enable_if]
         endif
         let script+= ['set runtimepath+=' . s:get_path(a:config, bundle)]
-        if !bundle.local && bundle.options.enable_if !=# ''
+        if bundle.options.enable_if !=# ''
             let script+= ['endif']
         endif
     endfor
