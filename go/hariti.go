@@ -4,6 +4,7 @@ import (
 	"./vcs/git"
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -66,7 +67,13 @@ func isDirectory(path string) bool {
 }
 
 func main() {
-	var wg sync.WaitGroup
+	concurrency := flag.Int("c", 4, "concurrency")
+	flag.Parse()
+
+	var (
+		wg        sync.WaitGroup
+		semaphore = make(chan struct{}, *concurrency)
+	)
 
 	in := bufio.NewScanner(os.Stdin)
 	for in.Scan() {
@@ -80,7 +87,9 @@ func main() {
 			defer func() {
 				fmt.Printf("%s\t<FINISH>\n", bundle.Id)
 				wg.Done()
+				<-semaphore
 			}()
+			semaphore <- struct{}{}
 
 			fmt.Printf("%s\t<START>\n", bundle.Id)
 			if isDirectory(bundle.Path) {
