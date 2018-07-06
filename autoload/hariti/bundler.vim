@@ -22,34 +22,28 @@
 let s:save_cpo= &cpo
 set cpo&vim
 
-let s:plugin_dir= expand('<sfile>:h:h:h')
-let s:go_backend= s:plugin_dir . '/bin/hariti'
-" detect suffix
-if has('win16') || has('win32') || has('win95')
-    let s:go_backend.= '.win32.exe'
-elseif has('win64')
-    let s:go_backend.= '.win64.exe'
-elseif has('mac')
-    let s:go_backend.= '.mac32'
-else
-    " this is a vimproc's way
-    if glob('/lib*/ld-linux*64.so.2', 1) !=# ''
-        let s:go_backend.= '.x64'
-    else
-        let s:go_backend.= '.x86'
+function! s:get_backend(config) abort
+    let prefer = a:config.prefer_bundler_backend
+    if prefer ==# ''
+        if hariti#bundler#go#available()
+            let prefer = 'go'
+        else
+            let prefer = 'vim'
+        endif
     endif
-endif
+    return hariti#bundler#{prefer}#get()
+endfunction
 
 function! hariti#bundler#install(config, datalist) abort
-    let backend= executable(s:go_backend) ? 'go' : 'vim'
-
-    call s:install_{backend}(a:config, a:datalist)
+    let backend = s:get_backend(a:config)
+    echomsg printf('hariti: install by %s', backend.name)
+    call backend.install(a:config, a:datalist)
 endfunction
 
 function! hariti#bundler#update(config, datalist) abort
-    let backend= executable(s:go_backend) ? 'go' : 'vim'
-
-    call s:update_{backend}(a:config, a:datalist)
+    let backend = s:get_backend(a:config)
+    echomsg printf('hariti: update by %s', backend.name)
+    call backend.update(a:config, a:datalist)
 endfunction
 
 function! hariti#bundler#uninstall(config, datalist) abort
@@ -78,71 +72,6 @@ function! hariti#bundler#get() abort
     \   'update': function('hariti#bundler#update'),
     \   'uninstall': function('hariti#bundler#uninstall'),
     \}
-endfunction
-
-function! s:install_vim(config, datalist) abort
-    let total= len(a:datalist)
-    let done= 0
-
-    for data in a:datalist
-        let done+= 1
-        let output= system(printf('git clone %s %s', data.url, data.path))
-        echomsg printf('(%d/%d) %s', done, total, output)
-    endfor
-endfunction
-
-function! s:install_go(config, datalist) abort
-    let input= []
-    let id= 0
-    let id2name= {}
-    for data in a:datalist
-        let id2name[id]= matchstr(data.url, '/\zs[^/]\+$')
-        let input+= [join([id, 'git', data.url, data.path], "\t")]
-        let id+= 1
-    endfor
-    if empty(input)
-        echomsg 'hariti: Skipping install'
-        return
-    endif
-
-    echomsg printf('hariti: Start %d bundles...', len(a:datalist))
-    let output= system(s:go_backend, join(input, "\n"))
-    for line in split(output, "\n")
-        let notice= split(line, "\t")
-        let [id, state]= [notice[0], notice[1]]
-        if state ==# '<START>'
-            " no message
-        elseif state ==# '<FINISH>'
-            echomsg printf('hariti: %s - finish', id2name[id])
-        elseif state ==# '<ERROR>'
-            echomsg printf('hariti: %s - error - %s', id2name[id], substitute(notice[2], '\\n', "\n", 'g'))
-        else
-            echomsg printf('hariti: %s - ???', id2name[id])
-        endif
-    endfor
-endfunction
-
-function! s:update_vim(config, datalist) abort
-    let total= len(a:datalist)
-    let done= 0
-
-    for data in a:datalist
-        let done+= 1
-        let cwd= getcwd()
-        try
-            execute 'lcd' data.path
-
-            let command= 'git pull --ff --ff-only'
-            let output= system(command)
-            echomsg printf('(%d/%d) %s', done, total, output)
-        finally
-            execute 'lcd' cwd
-        endtry
-    endfor
-endfunction
-
-function! s:update_go(config, datalist) abort
-    call s:install_go(a:config, a:datalist)
 endfunction
 
 let &cpo= s:save_cpo

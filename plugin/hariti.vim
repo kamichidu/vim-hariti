@@ -35,6 +35,7 @@ let g:hariti_config.source_filename= get(g:hariti_config, 'source_filename', exp
 let g:hariti_config.tap_filename= get(g:hariti_config, 'tap_filename', expand('~/.hariti/tap'))
 let g:hariti_config.bundle_directory= get(g:hariti_config, 'bundle_directory', expand('~/.hariti/bundle/'))
 let g:hariti_config.backup_directory= get(g:hariti_config, 'backup_directory', expand('~/.hariti/backup/'))
+let g:hariti_config.prefer_bundler_backend = get(g:hariti_config, 'prefer_bundler_backend', '')
 
 " for faster cheking bundles what enabled
 let g:hariti_bundles= {}
