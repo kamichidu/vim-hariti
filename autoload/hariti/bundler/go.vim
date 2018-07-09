@@ -39,13 +39,31 @@ else
         let s:go_backend.= '.x86'
     endif
 endif
-echomsg 'backend' . s:go_backend
 
 let s:bundler= {
 \   'name': 'go',
 \}
 
-function! s:install(config, datalist) abort
+function! s:custom_out_trans(msg) dict abort
+    let eles = split(a:msg, "\t")
+    if len(eles) < 2
+        return string(eles)
+    endif
+    let [id, state] = eles[0:1]
+    let id = self.id2name[str2nr(id)]
+    if state ==# '<START>'
+        return printf('%s - start', id)
+    elseif state ==# '<FINISH>'
+        return printf('%s - finish', id)
+    elseif state ==# '<ERROR>'
+        let errorlines = split(get(eles, 2, ''), '\\n')
+        return [printf('%s - error:', id)] + map(errorlines, '"\t" . v:val')
+    else
+        return printf('%s - %s', id, state)
+    endif
+endfunction
+
+function! s:bundler__install(config, datalist) dict abort
     let input= []
     let id= 0
     let id2name= {}
@@ -65,34 +83,27 @@ function! s:install(config, datalist) abort
     endif
 
     echomsg printf('hariti: Start %d bundles...', len(a:datalist))
-    let output= system(join(cmdline, ' '), join(input, "\n"))
-    for line in split(output, "\n")
-        let notice= split(line, "\t")
-        let [id, state]= [notice[0], notice[1]]
-        if state ==# '<START>'
-            " no message
-        elseif state ==# '<FINISH>'
-            echomsg printf('hariti: %s - finish', id2name[id])
-        elseif state ==# '<ERROR>'
-            echomsg printf('hariti: %s - error - %s', id2name[id], substitute(notice[2], '\\n', "\n", 'g'))
-        else
-            echomsg printf('hariti: %s - ???', id2name[id])
-        endif
-    endfor
+    let com = hariti#communicator#new()
+    let com.transformer = hariti#communicator#passthru_transformer()
+    let com.transformer.id2name = id2name
+    let com.transformer.out_trans = function('s:custom_out_trans')
+    let com.emitter = hariti#communicator#preview_emitter()
+    call com.start(cmdline, join(input, "\n"))
+    call com.wait()
 endfunction
-let s:bundler.install = function('s:install')
+let s:bundler.install = function('s:bundler__install')
 
-function! s:update(config, datalist) abort
-    call s:install_go(a:config, a:datalist)
+function! s:bundler__update(config, datalist) dict abort
+    call self.install(a:config, a:datalist)
 endfunction
-let s:bundler.update = function('s:update')
+let s:bundler.update = function('s:bundler__update')
 
 function! hariti#bundler#go#available() abort
     return executable(s:go_backend)
 endfunction
 
 function! hariti#bundler#go#get() abort
-    return s:bundler
+    return deepcopy(s:bundler)
 endfunction
 
 let &cpo= s:save_cpo
