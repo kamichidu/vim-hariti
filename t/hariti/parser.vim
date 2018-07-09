@@ -56,6 +56,14 @@ function! s:suite.apply_defaults()
     \           'repository': '',
     \           'local': 1,
     \           'options': {
+    \               'aliases': [],
+    \               'enable_if': '',
+    \               'depends': [],
+    \               'build': {
+    \                   'windows': [],
+    \                   'mac': [],
+    \                   'unix': [],
+    \               },
     \           },
     \       },
     \   ],

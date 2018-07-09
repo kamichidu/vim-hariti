@@ -71,36 +71,84 @@
             'repository': 't/dirs/hoge/fuga/aaa_test/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/bbb_test/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/ccc_test/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/test_aaa/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/test_bbb/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/test_ccc/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
 
@@ -108,6 +156,14 @@
             'repository': 't/dirs/hoge/fuga/test_aaa/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
 
@@ -115,24 +171,56 @@
             'repository': 't/dirs/hoge/fuga/bbb_test/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/ccc_test/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/test_bbb/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/test_ccc/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
 
@@ -140,12 +228,28 @@
             'repository': 't/dirs/hoge/fuga/aaa_test/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
         {
             'repository': 't/dirs/hoge/fuga/test_aaa/',
             'local': 1,
             'options': {
+                'aliases': [],
+                'enable_if': '',
+                'depends': [],
+                'build': {
+                    'windows': [],
+                    'mac': [],
+                    'unix': [],
+                },
             },
         },
     ],
