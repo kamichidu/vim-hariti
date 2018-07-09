@@ -59,8 +59,13 @@ function! s:install(config, datalist) abort
         return
     endif
 
+    let cmdline = [s:go_backend]
+    if get(a:config, 'bundler_concurrency', 0) > 0
+        let cmdline += ['-c', a:config.bundler_concurrency]
+    endif
+
     echomsg printf('hariti: Start %d bundles...', len(a:datalist))
-    let output= system(s:go_backend, join(input, "\n"))
+    let output= system(join(cmdline, ' '), join(input, "\n"))
     for line in split(output, "\n")
         let notice= split(line, "\t")
         let [id, state]= [notice[0], notice[1]]
