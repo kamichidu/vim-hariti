@@ -151,12 +151,12 @@ let s:passthru_transformer = {
 \}
 
 function! s:passthru_transformer__out_trans(msg) dict abort
-    return a:msg
+    return {'tag': '', 'label': '', 'message': a:msg}
 endfunction
 let s:passthru_transformer.out_trans = function('s:passthru_transformer__out_trans')
 
 function! s:passthru_transformer__err_trans(msg) dict abort
-    return a:msg
+    return {'tag': '', 'label': '', 'message': a:msg}
 endfunction
 let s:passthru_transformer.err_trans = function('s:passthru_transformer__err_trans')
 
@@ -166,19 +166,27 @@ let s:echo_emitter = {
 \   'name': 'echo',
 \}
 
-function! s:echo_emitter__out_emit(...) dict abort
-    let msg = join(a:000, ' ')
-    if msg !=# ''
-        echomsg msg
+function! s:echo_emitter__out_emit(msg) dict abort
+    let cmd = ['echomsg', string(a:msg.tag)]
+    if has_key(a:msg, 'label')
+        let cmd += [string(a:msg.label)]
     endif
+    if has_key(a:msg, 'message')
+        let cmd += [string(a:msg.message)]
+    endif
+    execute join(cmd, ' ')
 endfunction
 let s:echo_emitter.out_emit = function('s:echo_emitter__out_emit')
 
-function! s:echo_emitter__err_emit(...) dict abort
-    let msg = join(a:000, ' ')
-    if msg !=# ''
-        echoerr msg
+function! s:echo_emitter__err_emit(msg) dict abort
+    let cmd = ['echoerr', string(a:msg.tag)]
+    if has_key(a:msg, 'label')
+        let cmd += [string(a:msg.label)]
     endif
+    if has_key(a:msg, 'message')
+        let cmd += [string(a:msg.message)]
+    endif
+    execute join(cmd, ' ')
 endfunction
 let s:echo_emitter.err_emit = function('s:echo_emitter__err_emit')
 
@@ -199,45 +207,75 @@ function! s:preview_emitter__open_preview() dict abort
 endfunction
 let s:preview_emitter.open_preview = function('s:preview_emitter__open_preview')
 
-function! s:preview_emitter__out_emit(...) dict abort
-    let msg = join(a:000, ' ')
-    if msg ==# ''
-        return
-    endif
-
-    let [bnr, wnr] = self.open_preview()
-    if bnr < 0
-        echomsg msg
-        return
-    endif
-
-    call appendbufline(bnr, '$', msg)
-    if wnr > 0
-        execute wnr . 'windo' 'normal' 'G'
-    endif
-    redraw
+function! s:preview_emitter__out_emit(msg) dict abort
+    call self.emit(a:msg)
 endfunction
 let s:preview_emitter.out_emit = function('s:preview_emitter__out_emit')
 
-function! s:preview_emitter__err_emit(...) dict abort
-    let msg = join(a:000, ' ')
-    if msg ==# ''
-        return
-    endif
-
-    let [bnr, wnr] = self.open_preview()
-    if bnr < 0
-        echoerr msg
-        return
-    endif
-
-    call appendbufline(bnr, '$', msg)
-    if wnr > 0
-        execute wnr . 'windo' 'normal' 'G'
-    endif
-    redraw
+function! s:preview_emitter__err_emit(msg) dict abort
+    call self.emit(a:msg)
 endfunction
 let s:preview_emitter.err_emit = function('s:preview_emitter__err_emit')
+
+function! s:preview_emitter__emit(msg) dict abort
+    let [bnr, wnr] = self.open_preview()
+
+    if !has_key(self, '_items')
+        let self._items = []
+    endif
+
+    " find previous content of tag
+    for item in self._items
+        if item.tag ==# a:msg.tag
+            let tagged = item
+            break
+        endif
+    endfor
+    if !exists('tagged')
+        let tagged = {'tag': a:msg.tag, 'label': '', 'messages': []}
+        let self._items += [tagged]
+    endif
+    " modify in-place
+    if has_key(a:msg, 'label')
+        let tagged.label = a:msg.label
+    endif
+    if has_key(a:msg, 'message')
+        " omitting key and empty string are difference
+        let tagged.messages += [a:msg.message]
+    endif
+    let tagged.last_modified = reltimefloat(reltime())
+
+    " sorting by last_modified
+    let self._items = sort(self._items, self.sorter, self)
+
+    " format whole buffer lines
+    let lines = []
+    for item in self._items
+        let lines += [printf('%s - %s', item.tag, get(item, 'label', ''))]
+        let lines += map(copy(get(item, 'messages', [])), '"\t" . v:val')
+    endfor
+
+    " write to buffer
+    let _lazyredraw = &lazyredraw
+    let &lazyredraw = 1
+    try
+        call setbufline(bnr, 1, lines)
+        if wnr > 0
+            execute wnr . 'windo' 'normal' 'gg'
+        endif
+    finally
+        let &lazyredraw = _lazyredraw
+        redraw
+    endtry
+endfunction
+let s:preview_emitter.emit = function('s:preview_emitter__emit')
+
+function! s:preview_emitter__sorter(lhs, rhs) dict abort
+    let key1 = a:lhs.last_modified
+    let key2 = a:rhs.last_modified
+    return key1 == key2 ? 0 : (key1 < key2 ? 1 : -1)
+endfunction
+let s:preview_emitter.sorter = function('s:preview_emitter__sorter')
 
 function! hariti#communicator#passthru_transformer() abort
     return deepcopy(s:passthru_transformer)

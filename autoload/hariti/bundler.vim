@@ -24,7 +24,7 @@ set cpo&vim
 
 function! s:get_backend(config) abort
     let prefer = a:config.prefer_bundler_backend
-    let prefer = 'vim'
+    " let prefer = 'vim'
     if prefer ==# ''
         if hariti#bundler#go#available()
             let prefer = 'go'

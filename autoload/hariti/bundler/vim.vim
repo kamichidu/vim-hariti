@@ -24,52 +24,54 @@ set cpo&vim
 
 let s:util = hariti#util#get()
 
-let s:group_transformer = {
-\   'name': 'group',
+let s:tagging_transformer = {
+\   'name': 'tagging',
 \}
 
-function! s:group_transformer__out_trans(msg) dict abort
-    " be quiet
-    return []
+function! s:tagging_transformer__out_trans(msg) dict abort
+    return {'tag': self.tag, 'message': a:msg}
 endfunction
-let s:group_transformer.out_trans = function('s:group_transformer__out_trans')
+let s:tagging_transformer.out_trans = function('s:tagging_transformer__out_trans')
 
-function! s:group_transformer__err_trans(msg) dict abort
+function! s:tagging_transformer__err_trans(msg) dict abort
     let errorlines = split(a:msg, "\n")
-    return [printf('%s - error:', self.group_name)] + map(errorlines, '"\t" . v:val')
+    return map(errorlines, "{'tag': self.tag, 'message': v:val}")
 endfunction
-let s:group_transformer.err_trans = function('s:group_transformer__err_trans')
+let s:tagging_transformer.err_trans = function('s:tagging_transformer__err_trans')
 
 let s:bundler= {
 \   'name': 'vim',
 \}
 
 function! s:bundler__install(config, datalist) dict abort
+    let emitter = hariti#communicator#preview_emitter()
+
     let coms = []
     for data in a:datalist
         call self.semaphore(a:config, coms)
 
         let name = matchstr(data.url, '/\zs[^/]\+$')
         let com = hariti#communicator#new()
-        let com.transformer = deepcopy(s:group_transformer)
-        let com.transformer.group_name = name
-        let com.emitter = hariti#communicator#preview_emitter()
+        let com.transformer = deepcopy(s:tagging_transformer)
+        let com.transformer.tag = name
+        let com.emitter = emitter
         if isdirectory(s:util.unify_separator(data.path . '/.git/'))
-            call com.emitter.out_emit(printf('%s - skip', name))
+            call com.emitter.out_emit({'tag': name, 'label': 'skip'})
         else
-            call com.emitter.out_emit(printf('%s - start', name))
+            call com.emitter.out_emit({'tag': name, 'label': 'start'})
             call com.start(['git', 'clone', data.url, data.path])
             let coms += [com]
         endif
     endfor
     for com in coms
         let exitval = com.wait()
-        call com.emitter.out_emit(printf('%s - %s', com.transformer.group_name, exitval == 0 ? 'finish' : 'error'))
+        call com.emitter.out_emit({'tag': com.transformer.tag, 'label': exitval == 0 ? 'finish' : 'error'})
     endfor
 endfunction
 let s:bundler.install = function('s:bundler__install')
 
 function! s:bundler__update(config, datalist) dict abort
+    let emitter = hariti#communicator#preview_emitter()
     let concurrency = get(a:config, 'bundler_concurrency', 4)
     let coms = []
     for data in a:datalist
@@ -77,10 +79,10 @@ function! s:bundler__update(config, datalist) dict abort
 
         let name = matchstr(data.url, '/\zs[^/]\+$')
         let com = hariti#communicator#new()
-        let com.transformer = deepcopy(s:group_transformer)
-        let com.transformer.group_name = name
-        let com.emitter = hariti#communicator#preview_emitter()
-        call com.emitter.out_emit(printf('%s - start', name))
+        let com.transformer = deepcopy(s:tagging_transformer)
+        let com.transformer.tag = name
+        let com.emitter = emitter
+        call com.emitter.out_emit({'tag': name, 'label': 'start'})
         if isdirectory(s:util.unify_separator(data.path . '/.git/'))
             let com.dir = data.path
             call com.start(['git', 'pull', '--ff', '--ff-only'])
@@ -91,7 +93,7 @@ function! s:bundler__update(config, datalist) dict abort
     endfor
     for com in coms
         let exitval = com.wait()
-        call com.emitter.out_emit(printf('%s - %s', com.transformer.group_name, exitval == 0 ? 'finish' : 'error'))
+        call com.emitter.out_emit({'tag': com.transformer.tag, 'label': exitval == 0 ? 'finish' : 'error'})
     endfor
 endfunction
 let s:bundler.update = function('s:bundler__update')

@@ -47,19 +47,19 @@ let s:bundler= {
 function! s:custom_out_trans(msg) dict abort
     let eles = split(a:msg, "\t")
     if len(eles) < 2
-        return string(eles)
+        return {'tag': '', 'message': string(eles)}
     endif
     let [id, state] = eles[0:1]
     let id = self.id2name[str2nr(id)]
     if state ==# '<START>'
-        return printf('%s - start', id)
+        return {'tag': id, 'label': 'start'}
     elseif state ==# '<FINISH>'
-        return printf('%s - finish', id)
+        return {'tag': id, 'label': 'finish'}
     elseif state ==# '<ERROR>'
         let errorlines = split(get(eles, 2, ''), '\\n')
-        return [printf('%s - error:', id)] + map(errorlines, '"\t" . v:val')
+        return map(errorlines, "{'tag': id, 'label': 'error', 'message': v:val}")
     else
-        return printf('%s - %s', id, state)
+        return {'tag': id, 'label': state}
     endif
 endfunction
 
