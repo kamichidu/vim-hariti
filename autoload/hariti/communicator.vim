@@ -195,15 +195,22 @@ let s:preview_emitter = {
 \}
 
 function! s:preview_emitter__open_preview() dict abort
-    windo if &previewwindow | let bid = bufnr('%') | endif
-    if !exists('bid')
-        silent pedit +setlocal\ hidden\ buftype=nofile hariti-progress
+    let _previewheight = &previewheight
+    try
+        " open preview window as well as bigger
+        let &previewheight = float2nr(screenrow() * 0.8)
         windo if &previewwindow | let bid = bufnr('%') | endif
-    endif
-    if !exists('bid')
-        return [-1, -1]
-    endif
-    return [bid, bufwinnr(bid)]
+        if !exists('bid')
+            silent pedit +setlocal\ hidden\ buftype=nofile hariti-progress
+            windo if &previewwindow | let bid = bufnr('%') | endif
+        endif
+        if !exists('bid')
+            return [-1, -1]
+        endif
+        return [bid, bufwinnr(bid)]
+    finally
+        let &previewheight = _previewheight
+    endtry
 endfunction
 let s:preview_emitter.open_preview = function('s:preview_emitter__open_preview')
 
