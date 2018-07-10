@@ -1,7 +1,9 @@
+MAKE=make
+
 all: main
 
 main:
-	make -C bin/
+	${MAKE} -C bin/
 
 prepare:
 	pushd `go env GOROOT`/src;\
