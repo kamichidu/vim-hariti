@@ -264,8 +264,9 @@ function! s:preview_emitter__emit(msg) dict abort
 
     " write to buffer
     let _lazyredraw = &lazyredraw
-    let &lazyredraw = 1
     try
+        let &lazyredraw = 1
+        call deletebufline(bnr, 1, '$')
         call setbufline(bnr, 1, lines)
         if wnr > 0
             execute wnr . 'windo' 'normal' 'gg'
