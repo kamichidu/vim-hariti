@@ -50,7 +50,7 @@ function! s:custom_out_trans(msg) dict abort
         return {'tag': '', 'message': string(eles)}
     endif
     let [id, state] = eles[0:1]
-    let id = self.id2name[str2nr(id)]
+    let id = get(self.id2name, str2nr(id), id)
     if state ==# '<START>'
         return {'tag': id, 'label': 'start'}
     elseif state ==# '<FINISH>'
