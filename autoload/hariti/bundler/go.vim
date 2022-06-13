@@ -30,7 +30,7 @@ if has('win64')
 elseif has('win16') || has('win32') || has('win95')
     let s:go_backend.= '.win32.exe'
 elseif has('mac')
-    let s:go_backend.= '.mac32'
+    let s:go_backend.= '.mac64'
 else
     " this is a vimproc's way
     if glob('/lib*/ld-linux*64.so.2', 1) !=# ''

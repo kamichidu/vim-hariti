@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./vcs/git"
+	"hariti/vcs/git"
 	"bufio"
 	"errors"
 	"flag"
